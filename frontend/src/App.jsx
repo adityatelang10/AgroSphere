@@ -6,6 +6,7 @@ import ProtectedRoute from "./components/routing/ProtectedRoute";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import OrdersPage from "./pages/customer/OrdersPage";
+import CartPage from "./pages/customer/CartPage";
 import FarmerCropsPage from "./pages/farmer/FarmerCropsPage";
 import AddCropPage from "./pages/farmer/AddCropPage";
 import FarmerDashboardPage from "./pages/farmer/FarmerDashboardPage";
@@ -37,6 +38,7 @@ export default function App() {
 
         <Route element={<ProtectedRoute allowedRoles={["CUSTOMER"]} />}>
           <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/cart" element={<CartPage />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["FARMER"]} />}>

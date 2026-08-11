@@ -16,6 +16,7 @@ export default function TopNav() {
   const navigate = useNavigate();
   const { isAuthenticated, logout, user } = useAuth();
   const { itemCount } = useCart();
+  const canAccessCart = user?.role === "CUSTOMER";
 
   const handleLogout = async () => {
     await logout();
@@ -75,13 +76,17 @@ export default function TopNav() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {user?.role === "CUSTOMER" ? (
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+          {canAccessCart ? (
+            <NavLink
+              to="/cart"
+              aria-label={`Open cart with ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-800 dark:hover:bg-slate-800 dark:hover:text-emerald-300"
+            >
               <span>Cart</span>
               <span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-slate-950">
                 {itemCount}
               </span>
-            </div>
+            </NavLink>
           ) : null}
 
           <NotificationBell />

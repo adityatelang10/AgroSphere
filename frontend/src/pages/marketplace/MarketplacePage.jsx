@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
@@ -20,6 +20,7 @@ const initialFilters = {
 export default function MarketplacePage() {
   const { user } = useAuth();
   const { addToCart } = useCart();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState(initialFilters);
   const [crops, setCrops] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,6 +55,23 @@ export default function MarketplacePage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     await loadCrops(filters);
+  };
+
+  const handleAddToCart = (crop) => {
+    if (user?.role !== "CUSTOMER") {
+      navigate("/login", { state: { from: { pathname: "/marketplace" } } });
+      return;
+    }
+
+    addToCart({
+      cropId: crop._id,
+      name: crop.name,
+      price: crop.price,
+      unit: crop.unit,
+      imageUrl: crop.images?.[0]?.url || "",
+      stockQuantity: crop.stockQuantity,
+    });
+    navigate("/cart");
   };
 
   return (
@@ -242,19 +260,17 @@ export default function MarketplacePage() {
                   </Link>
                   <button
                     type="button"
-                    onClick={() =>
-                      addToCart({
-                        cropId: crop._id,
-                        name: crop.name,
-                        price: crop.price,
-                        unit: crop.unit,
-                        imageUrl: crop.images?.[0]?.url || "",
-                      })
-                    }
-                    disabled={user?.role === "FARMER"}
+                    onClick={() => handleAddToCart(crop)}
+                    disabled={user?.role === "FARMER" || crop.stockQuantity <= 0}
                     className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:disabled:bg-slate-700"
                   >
-                    {user?.role === "FARMER" ? "Farmer accounts cannot cart" : "Add to cart"}
+                    {crop.stockQuantity <= 0
+                      ? "Out of stock"
+                      : user?.role === "FARMER"
+                        ? "Farmer accounts cannot cart"
+                        : user?.role !== "CUSTOMER"
+                          ? "Sign in to buy"
+                        : "Add to cart"}
                   </button>
                 </div>
               </div>

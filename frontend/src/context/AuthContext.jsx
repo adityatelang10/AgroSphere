@@ -5,6 +5,7 @@ import {
   loginUser,
   logoutUser,
   registerUser,
+  updateDeliveryAddress as updateDeliveryAddressRequest,
 } from "../services/authService";
 
 const AuthContext = createContext(null);
@@ -62,6 +63,12 @@ export function AuthProvider({ children }) {
     return response.user;
   };
 
+  const updateDeliveryAddress = async (deliveryAddress) => {
+    const response = await updateDeliveryAddressRequest(deliveryAddress);
+    setUser(response.user);
+    return response.user;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -72,6 +79,7 @@ export function AuthProvider({ children }) {
         register,
         logout,
         refreshUser,
+        updateDeliveryAddress,
       }}
     >
       {children}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
@@ -11,6 +11,7 @@ export default function CropDetailsPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const { addToCart } = useCart();
+  const navigate = useNavigate();
   const [crop, setCrop] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,6 +55,23 @@ export default function CropDetailsPage() {
       </div>
     );
   }
+
+  const handleAddToCart = () => {
+    if (user?.role !== "CUSTOMER") {
+      navigate("/login", { state: { from: { pathname: `/crop/${id}` } } });
+      return;
+    }
+
+    addToCart({
+      cropId: crop._id,
+      name: crop.name,
+      price: crop.price,
+      unit: crop.unit,
+      imageUrl: crop.images?.[0]?.url || "",
+      stockQuantity: crop.stockQuantity,
+    });
+    navigate("/cart");
+  };
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.2fr,0.8fr]">
@@ -128,19 +146,17 @@ export default function CropDetailsPage() {
           </Link>
           <button
             type="button"
-            onClick={() =>
-              addToCart({
-                cropId: crop._id,
-                name: crop.name,
-                price: crop.price,
-                unit: crop.unit,
-                imageUrl: crop.images?.[0]?.url || "",
-              })
-            }
-            disabled={user?.role === "FARMER"}
+            onClick={handleAddToCart}
+            disabled={user?.role === "FARMER" || crop.stockQuantity <= 0}
             className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-400"
           >
-            {user?.role === "FARMER" ? "Farmer accounts cannot cart" : "Add to cart"}
+            {crop.stockQuantity <= 0
+              ? "Out of stock"
+              : user?.role === "FARMER"
+                ? "Farmer accounts cannot cart"
+                : user?.role !== "CUSTOMER"
+                  ? "Sign in to buy"
+                : "Add to cart"}
           </button>
         </div>
       </section>

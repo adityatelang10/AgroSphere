@@ -77,6 +77,42 @@ const loginValidation = [
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
+const updateDeliveryAddressValidation = [
+  body("line1")
+    .trim()
+    .notEmpty()
+    .withMessage("Address line 1 is required")
+    .isLength({ max: 120 })
+    .withMessage("Address line 1 cannot exceed 120 characters"),
+  body("line2")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 120 })
+    .withMessage("Address line 2 cannot exceed 120 characters"),
+  body("villageOrCity")
+    .trim()
+    .notEmpty()
+    .withMessage("Village or city is required")
+    .isLength({ max: 80 })
+    .withMessage("Village or city cannot exceed 80 characters"),
+  body("district")
+    .trim()
+    .notEmpty()
+    .withMessage("District is required")
+    .isLength({ max: 80 })
+    .withMessage("District cannot exceed 80 characters"),
+  body("state")
+    .trim()
+    .notEmpty()
+    .withMessage("State is required")
+    .isLength({ max: 80 })
+    .withMessage("State cannot exceed 80 characters"),
+  body("pincode")
+    .trim()
+    .matches(/^\d{6}$/)
+    .withMessage("Pincode must be a valid 6-digit Indian pincode"),
+];
+
 const getCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
@@ -221,6 +257,33 @@ const getCurrentUser = async (req, res) => {
   });
 };
 
+const updateDeliveryAddress = async (req, res, next) => {
+  const validationErrorResponse = handleValidation(req, res);
+  if (validationErrorResponse) {
+    return validationErrorResponse;
+  }
+
+  try {
+    req.user.deliveryAddress = {
+      line1: req.body.line1.trim(),
+      line2: req.body.line2 ? req.body.line2.trim() : "",
+      villageOrCity: req.body.villageOrCity.trim(),
+      district: req.body.district.trim(),
+      state: req.body.state.trim(),
+      pincode: req.body.pincode.trim(),
+    };
+    await req.user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Delivery address updated successfully",
+      user: sanitizeUser(req.user),
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const logout = async (req, res) => {
   res.clearCookie("token", getCookieClearOptions());
 
@@ -237,4 +300,6 @@ module.exports = {
   login,
   getCurrentUser,
   logout,
+  updateDeliveryAddress,
+  updateDeliveryAddressValidation,
 };
