@@ -6,8 +6,6 @@ import { useCart } from "../../context/CartContext";
 import { checkout } from "../../services/orderService";
 import { formatCurrency } from "../../utils/formatters";
 
-const FREE_DELIVERY_THRESHOLD = 800;
-
 function BasketIcon({ className = "" }) {
   return (
     <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
@@ -31,9 +29,6 @@ export default function CartPage() {
       address?.state &&
       address?.pincode
   );
-  const remainingForDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
-  const deliveryProgress = Math.min((subtotal / FREE_DELIVERY_THRESHOLD) * 100, 100);
-
   const handleCheckout = async () => {
     if (!hasDeliveryAddress) {
       navigate("/profile");
@@ -82,9 +77,8 @@ export default function CartPage() {
           </div>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/25"><BasketIcon className="h-7 w-7" /></div>
         </div>
-        <div className="mt-7 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 dark:border-emerald-950 dark:bg-emerald-950/25">
-          <div className="flex items-center justify-between gap-4 text-sm"><span className="font-medium text-emerald-900 dark:text-emerald-100">{remainingForDelivery ? `${formatCurrency(remainingForDelivery)} away from priority farm delivery` : "Priority farm delivery unlocked"}</span><span className="font-bold text-emerald-700 dark:text-emerald-400">{Math.round(deliveryProgress)}%</span></div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-950"><div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-lime-400 transition-all duration-500" style={{ width: `${deliveryProgress}%` }} /></div>
+        <div className="mt-7 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-900 dark:border-emerald-950 dark:bg-emerald-950/25 dark:text-emerald-100">
+          Orders are placed with the farmer. AgroSphere records the order and delivery address but does not process payment or calculate delivery charges.
         </div>
       </section>
 
@@ -120,12 +114,12 @@ export default function CartPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-lime-300">Order summary</p>
           <div className="mt-6 space-y-3 text-sm text-slate-300">
             <div className="flex justify-between"><span>Produce ({itemCount})</span><span>{formatCurrency(subtotal)}</span></div>
-            <div className="flex justify-between"><span>Farm delivery</span><span className="font-semibold text-lime-300">Included</span></div>
+            <div className="flex justify-between"><span>Payment</span><span className="font-semibold text-lime-300">Not processed in app</span></div>
             <div className="flex justify-between border-t border-slate-700 pt-4 font-display text-xl font-bold text-white"><span>Total</span><span>{formatCurrency(subtotal)}</span></div>
           </div>
           {error ? <p className="mt-5 rounded-xl bg-rose-500/15 px-3 py-2 text-sm leading-6 text-rose-200">{error}</p> : null}
-          {!hasDeliveryAddress ? <button type="button" onClick={() => navigate("/profile")} className="mt-6 w-full rounded-xl bg-amber-400 px-4 py-3.5 text-sm font-bold text-slate-950 transition hover:bg-amber-300">Add delivery address</button> : <button type="button" disabled={isCheckingOut} onClick={handleCheckout} className="mt-6 w-full rounded-xl bg-lime-400 px-4 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-lime-500/20 transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-60">{isCheckingOut ? "Placing your order..." : "Place secure order"}</button>}
-          <p className="mt-4 text-center text-xs leading-5 text-slate-400">Direct farmer payment · Live order updates · No hidden platform fees</p>
+          {!hasDeliveryAddress ? <button type="button" onClick={() => navigate("/profile")} className="mt-6 w-full rounded-xl bg-amber-400 px-4 py-3.5 text-sm font-bold text-slate-950 transition hover:bg-amber-300">Add delivery address</button> : <button type="button" disabled={isCheckingOut} onClick={handleCheckout} className="mt-6 w-full rounded-xl bg-lime-400 px-4 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-lime-500/20 transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-60">{isCheckingOut ? "Placing your order..." : "Place order"}</button>}
+          <p className="mt-4 text-center text-xs leading-5 text-slate-400">Order placement only · Live order updates · AgroSphere does not process payment</p>
         </aside>
       </div>
     </div>

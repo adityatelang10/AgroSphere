@@ -31,7 +31,10 @@ const geminiChatValidation = [
   body("messages.*.role")
     .optional()
     .isString()
-    .withMessage("Each message role must be a string"),
+    .withMessage("Each message role must be a string")
+    .bail()
+    .isIn(["user", "assistant", "model", "bot"])
+    .withMessage("Message role must be user or assistant"),
   body().custom((value) => {
     const hasQuestion =
       typeof value?.question === "string" && value.question.trim().length > 0;

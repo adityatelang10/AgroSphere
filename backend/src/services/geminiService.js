@@ -65,10 +65,6 @@ const normalizeMessageRole = (role) => {
     return "user";
   }
 
-  if (normalizedRole === "system") {
-    return "system";
-  }
-
   return null;
 };
 
@@ -116,13 +112,6 @@ const normalizeConversationInput = ({ messages, question }) => {
           return null;
         }
 
-        if (role === "system") {
-          return {
-            role: "system",
-            text,
-          };
-        }
-
         return {
           role,
           parts: [{ text }],
@@ -130,15 +119,8 @@ const normalizeConversationInput = ({ messages, question }) => {
       })
       .filter(Boolean);
 
-    const systemMessages = contents
-      .filter((message) => message.role === "system")
-      .map((message) => message.text);
-
-    const conversationMessages = contents.filter((message) => message.role !== "system");
-
     return {
-      contents: conversationMessages,
-      systemPromptSuffix: systemMessages.join("\n\n").trim(),
+      contents,
     };
   }
 
@@ -149,16 +131,7 @@ const normalizeConversationInput = ({ messages, question }) => {
         parts: [{ text: String(question).trim() }],
       },
     ],
-    systemPromptSuffix: "",
   };
-};
-
-const buildSystemInstruction = (systemPromptSuffix = "") => {
-  if (!systemPromptSuffix) {
-    return AGROSPHERE_GEMINI_SYSTEM_PROMPT;
-  }
-
-  return `${AGROSPHERE_GEMINI_SYSTEM_PROMPT}\n\nAdditional conversation-specific instruction:\n${systemPromptSuffix}`;
 };
 
 const extractResponseText = (response) => {
@@ -187,7 +160,7 @@ const extractResponseText = (response) => {
 
 const generateGeminiReply = async ({ messages, question }) => {
   const client = await getGeminiClient();
-  const { contents, systemPromptSuffix } = normalizeConversationInput({
+  const { contents } = normalizeConversationInput({
     messages,
     question,
   });
@@ -202,7 +175,7 @@ const generateGeminiReply = async ({ messages, question }) => {
     model: getGeminiModelName(),
     contents,
     config: {
-      systemInstruction: buildSystemInstruction(systemPromptSuffix),
+      systemInstruction: AGROSPHERE_GEMINI_SYSTEM_PROMPT,
       temperature: 0.4,
     },
   });
