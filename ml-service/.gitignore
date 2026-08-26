@@ -1,0 +1,19 @@
+.venv/
+.env
+__pycache__/
+*.py[cod]
+*.pyc
+.pytest_cache/
+
+# Downloaded/generated PlantVillage image splits stay local.
+data/plant_disease/train/
+data/plant_disease/validation/
+data/plant_disease/test/
+
+model_artifacts/*
+!model_artifacts/.gitkeep
+!model_artifacts/crop_model.joblib
+!model_artifacts/crop_model_metadata.json
+!model_artifacts/disease_model.pt
+!model_artifacts/disease_classes.json
+!model_artifacts/disease_model_metadata.json

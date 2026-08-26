@@ -1,3 +1,21 @@
-node_modules/
+# Local environment files
 .env
+backend/.env
+frontend/.env
+ml-service/.env
+
+# Installed dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Generated builds
 build/
+dist/
+frontend/dist/
+
+# Python environments and caches
+ml-service/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
