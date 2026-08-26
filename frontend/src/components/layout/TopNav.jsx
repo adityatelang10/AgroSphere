@@ -77,6 +77,9 @@ export default function TopNav() {
               <NavLink to="/farmer/decision-engine" className={getLinkClasses}>
                 Farm Decision
               </NavLink>
+              <NavLink to="/farmer/what-if-simulator" className={getLinkClasses}>
+                What-If Simulator
+              </NavLink>
               <NavLink to="/farmer/orders" className={getLinkClasses}>
                 Farmer Orders
               </NavLink>

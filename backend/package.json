@@ -10,7 +10,10 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "check": "node --check src/index.js",
-    "test:decision": "node --test tests/decisionEngineService.test.js"
+    "test:decision": "node --test tests/decisionEngineService.test.js",
+    "test:dashboard": "node --test tests/intelligenceDashboardService.test.js",
+    "test:whatif": "node --test tests/whatIfSimulationService.test.js",
+    "test:decision-support": "node --test tests/decisionEngineService.test.js tests/intelligenceDashboardService.test.js tests/whatIfSimulationService.test.js"
   },
   "keywords": [
     "agrosphere",

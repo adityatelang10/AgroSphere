@@ -208,8 +208,16 @@ const loadLatestEvidence = async ({ farmerId, selectedCrop, now = new Date() }) 
             recommendedTiming: irrigation.result.recommendedTiming,
             waterStress: irrigation.result.waterStress,
             soilMoistureStatus: irrigation.result.soilMoistureStatus,
+            referenceET: irrigation.result.referenceET,
+            cropWaterRequirement: irrigation.result.cropWaterRequirement,
             estimatedIrrigationNeed: irrigation.result.estimatedIrrigationNeed,
             effectiveForecastRainfall: irrigation.result.effectiveForecastRainfall,
+            units: {
+              referenceET: "mm/day",
+              cropWaterRequirement: "mm/day",
+              estimatedIrrigationNeed: "mm net depth over next 24 hours",
+              effectiveForecastRainfall: "mm",
+            },
             engineVersion: irrigation.engineVersion,
           },
         }
@@ -230,6 +238,13 @@ const loadLatestEvidence = async ({ farmerId, selectedCrop, now = new Date() }) 
           usageNote:
             "The 2021 AGMARKNET-origin trend is historical context only and contributes zero current-market score.",
           data: {
+            selection: {
+              commodity: market.selection.commodity,
+              market: market.selection.market,
+              district: market.selection.district,
+              state: market.selection.state,
+              variety: market.selection.variety,
+            },
             trend: market.trend.direction,
             percentageChange: market.trend.percentageChange,
             referencePrice: {

@@ -19,9 +19,19 @@ const {
   irrigationAdviceValidation,
 } = require("../controllers/irrigationController");
 const {
+  getFarmerIntelligenceDashboard,
+} = require("../controllers/intelligenceDashboardController");
+const {
   createMarketIntelligence,
   marketIntelligenceValidation,
 } = require("../controllers/marketIntelligenceController");
+const {
+  createWhatIfSimulation,
+  getWhatIfContext,
+  rejectUnsupportedSimulationFields,
+  simulationContextValidation,
+  whatIfSimulationValidation,
+} = require("../controllers/whatIfSimulatorController");
 const { authMiddleware, requireRole } = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -65,6 +75,12 @@ const uploadDiseaseImage = (req, res, next) => {
 };
 
 router.get("/health", getAiHealth);
+router.get(
+  "/intelligence-dashboard",
+  authMiddleware,
+  requireRole("FARMER"),
+  getFarmerIntelligenceDashboard
+);
 router.post(
   "/crop-recommendation",
   authMiddleware,
@@ -107,6 +123,21 @@ router.post(
   rejectUnexpectedDecisionFields,
   decisionEngineValidation,
   createDecision
+);
+router.get(
+  "/decision-engine/simulation-context",
+  authMiddleware,
+  requireRole("FARMER"),
+  simulationContextValidation,
+  getWhatIfContext
+);
+router.post(
+  "/decision-engine/simulate",
+  authMiddleware,
+  requireRole("FARMER"),
+  rejectUnsupportedSimulationFields,
+  whatIfSimulationValidation,
+  createWhatIfSimulation
 );
 
 module.exports = router;
