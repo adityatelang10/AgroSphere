@@ -1,0 +1,108 @@
+{
+  "engineVersion": "irrigation-v1",
+  "methodName": "Hargreaves-ETc soil-water decision engine",
+  "effectiveRainfallFraction": 0.8,
+  "growthStages": [
+    "initial",
+    "development",
+    "mid_season",
+    "late_season"
+  ],
+  "stageDisplayNames": {
+    "initial": "Initial",
+    "development": "Development",
+    "mid_season": "Mid-season",
+    "late_season": "Late-season"
+  },
+  "crops": {
+    "tomato": {
+      "displayName": "Tomato",
+      "kcSourcePoints": {
+        "initial": 0.6,
+        "midSeason": 1.15,
+        "end": 0.8
+      },
+      "stageCoefficients": {
+        "initial": 0.6,
+        "development": 0.875,
+        "mid_season": 1.15,
+        "late_season": 0.975
+      },
+      "depletionFraction": 0.4
+    },
+    "maize": {
+      "displayName": "Maize (field grain)",
+      "kcSourcePoints": {
+        "initial": 0.3,
+        "midSeason": 1.2,
+        "end": 0.6
+      },
+      "stageCoefficients": {
+        "initial": 0.3,
+        "development": 0.75,
+        "mid_season": 1.2,
+        "late_season": 0.9
+      },
+      "depletionFraction": 0.55
+    },
+    "cotton": {
+      "displayName": "Cotton",
+      "kcSourcePoints": {
+        "initial": 0.35,
+        "midSeason": 1.15,
+        "end": 0.5
+      },
+      "stageCoefficients": {
+        "initial": 0.35,
+        "development": 0.75,
+        "mid_season": 1.15,
+        "late_season": 0.825
+      },
+      "depletionFraction": 0.65
+    },
+    "groundnut": {
+      "displayName": "Groundnut (peanut)",
+      "kcSourcePoints": {
+        "initial": 0.4,
+        "midSeason": 1.15,
+        "end": 0.6
+      },
+      "stageCoefficients": {
+        "initial": 0.4,
+        "development": 0.775,
+        "mid_season": 1.15,
+        "late_season": 0.875
+      },
+      "depletionFraction": 0.5
+    }
+  },
+  "soils": {
+    "loamy_sand": {
+      "displayName": "Loamy Sand",
+      "fieldCapacity": 0.15,
+      "wiltingPoint": 0.06
+    },
+    "silt": {
+      "displayName": "Silt",
+      "fieldCapacity": 0.32,
+      "wiltingPoint": 0.15
+    },
+    "silty_clay": {
+      "displayName": "Silty Clay",
+      "fieldCapacity": 0.35,
+      "wiltingPoint": 0.23
+    }
+  },
+  "sources": [
+    {
+      "title": "FAO Irrigation and Drainage Paper 56, Chapters 3, 6 and 8",
+      "url": "https://www.fao.org/4/X0490E/X0490E00.htm",
+      "usedFor": "Hargreaves ETo, ETc = Kc x ETo, crop coefficients, field capacity, wilting point and depletion fractions"
+    },
+    {
+      "title": "FAO Irrigation Water Management Training Manual, Chapter 4",
+      "url": "https://www.fao.org/4/S2022E/s2022e08.htm",
+      "usedFor": "Effective rainfall and irrigation water need principles"
+    }
+  ]
+}

@@ -125,6 +125,36 @@ export default function FarmerDashboardPage() {
               </svg>
               Add Crop
             </Link>
+            <Link
+              to="/farmer/crop-recommendation"
+              className="inline-flex rounded-full border border-amber-400 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/30"
+            >
+              Open Crop Advisor
+            </Link>
+            <Link
+              to="/farmer/disease-detection"
+              className="inline-flex rounded-full border border-lime-500 px-4 py-2 text-sm font-semibold text-lime-700 transition hover:bg-lime-50 dark:text-lime-300 dark:hover:bg-lime-950/30"
+            >
+              Open Leaf Scanner
+            </Link>
+            <Link
+              to="/farmer/irrigation-advisor"
+              className="inline-flex rounded-full border border-sky-500 px-4 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-50 dark:text-sky-300 dark:hover:bg-sky-950/30"
+            >
+              Open Irrigation Advisor
+            </Link>
+            <Link
+              to="/farmer/market-intelligence"
+              className="inline-flex rounded-full border border-violet-500 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-50 dark:text-violet-300 dark:hover:bg-violet-950/30"
+            >
+              Open Market Intelligence
+            </Link>
+            <Link
+              to="/farmer/decision-engine"
+              className="inline-flex rounded-full border border-fuchsia-500 px-4 py-2 text-sm font-semibold text-fuchsia-700 transition hover:bg-fuchsia-50 dark:text-fuchsia-300 dark:hover:bg-fuchsia-950/30"
+            >
+              Generate Farm Decision
+            </Link>
           </div>
         </article>
 

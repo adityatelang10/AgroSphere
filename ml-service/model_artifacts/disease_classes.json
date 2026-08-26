@@ -1,0 +1,110 @@
+{
+  "modelVersion": "disease-v1",
+  "classes": [
+    {
+      "index": 0,
+      "label": "Pepper,_bell___Bacterial_spot",
+      "crop": "Bell Pepper",
+      "condition": "Bacterial Spot",
+      "isHealthy": false
+    },
+    {
+      "index": 1,
+      "label": "Pepper,_bell___healthy",
+      "crop": "Bell Pepper",
+      "condition": "Healthy",
+      "isHealthy": true
+    },
+    {
+      "index": 2,
+      "label": "Potato___Early_blight",
+      "crop": "Potato",
+      "condition": "Early Blight",
+      "isHealthy": false
+    },
+    {
+      "index": 3,
+      "label": "Potato___Late_blight",
+      "crop": "Potato",
+      "condition": "Late Blight",
+      "isHealthy": false
+    },
+    {
+      "index": 4,
+      "label": "Potato___healthy",
+      "crop": "Potato",
+      "condition": "Healthy",
+      "isHealthy": true
+    },
+    {
+      "index": 5,
+      "label": "Tomato___Bacterial_spot",
+      "crop": "Tomato",
+      "condition": "Bacterial Spot",
+      "isHealthy": false
+    },
+    {
+      "index": 6,
+      "label": "Tomato___Early_blight",
+      "crop": "Tomato",
+      "condition": "Early Blight",
+      "isHealthy": false
+    },
+    {
+      "index": 7,
+      "label": "Tomato___Late_blight",
+      "crop": "Tomato",
+      "condition": "Late Blight",
+      "isHealthy": false
+    },
+    {
+      "index": 8,
+      "label": "Tomato___Leaf_Mold",
+      "crop": "Tomato",
+      "condition": "Leaf Mold",
+      "isHealthy": false
+    },
+    {
+      "index": 9,
+      "label": "Tomato___Septoria_leaf_spot",
+      "crop": "Tomato",
+      "condition": "Septoria Leaf Spot",
+      "isHealthy": false
+    },
+    {
+      "index": 10,
+      "label": "Tomato___Spider_mites Two-spotted_spider_mite",
+      "crop": "Tomato",
+      "condition": "Two-Spotted Spider Mite",
+      "isHealthy": false
+    },
+    {
+      "index": 11,
+      "label": "Tomato___Target_Spot",
+      "crop": "Tomato",
+      "condition": "Target Spot",
+      "isHealthy": false
+    },
+    {
+      "index": 12,
+      "label": "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+      "crop": "Tomato",
+      "condition": "Yellow Leaf Curl Virus",
+      "isHealthy": false
+    },
+    {
+      "index": 13,
+      "label": "Tomato___Tomato_mosaic_virus",
+      "crop": "Tomato",
+      "condition": "Mosaic Virus",
+      "isHealthy": false
+    },
+    {
+      "index": 14,
+      "label": "Tomato___healthy",
+      "crop": "Tomato",
+      "condition": "Healthy",
+      "isHealthy": true
+    }
+  ]
+}

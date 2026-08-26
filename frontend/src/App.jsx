@@ -9,6 +9,11 @@ import OrdersPage from "./pages/customer/OrdersPage";
 import CartPage from "./pages/customer/CartPage";
 import FarmerCropsPage from "./pages/farmer/FarmerCropsPage";
 import AddCropPage from "./pages/farmer/AddCropPage";
+import CropRecommendationPage from "./pages/farmer/CropRecommendationPage";
+import DiseaseDetectionPage from "./pages/farmer/DiseaseDetectionPage";
+import SmartIrrigationPage from "./pages/farmer/SmartIrrigationPage";
+import MarketIntelligencePage from "./pages/farmer/MarketIntelligencePage";
+import DecisionEnginePage from "./pages/farmer/DecisionEnginePage";
 import FarmerDashboardPage from "./pages/farmer/FarmerDashboardPage";
 import FarmerOrdersPage from "./pages/farmer/FarmerOrdersPage";
 import FarmerProfilePage from "./pages/marketplace/FarmerProfilePage";
@@ -45,6 +50,11 @@ export default function App() {
           <Route path="/farmer/dashboard" element={<FarmerDashboardPage />} />
           <Route path="/farmer/crops" element={<FarmerCropsPage />} />
           <Route path="/farmer/crops/new" element={<AddCropPage />} />
+          <Route path="/farmer/crop-recommendation" element={<CropRecommendationPage />} />
+          <Route path="/farmer/disease-detection" element={<DiseaseDetectionPage />} />
+          <Route path="/farmer/irrigation-advisor" element={<SmartIrrigationPage />} />
+          <Route path="/farmer/market-intelligence" element={<MarketIntelligencePage />} />
+          <Route path="/farmer/decision-engine" element={<DecisionEnginePage />} />
           <Route path="/farmer/orders" element={<FarmerOrdersPage />} />
         </Route>
 

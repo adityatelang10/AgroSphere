@@ -1,0 +1,116 @@
+{
+  "datasetVersion": "market-data-v1",
+  "analysisVersion": "market-v1",
+  "datasetName": "Curated historical AGMARKNET mandi price observations",
+  "sourceType": "Public historical archive of AGMARKNET-origin records",
+  "officialSource": "AGMARKNET / Directorate of Marketing and Inspection",
+  "officialCatalogUrl": "https://www.data.gov.in/catalog/current-daily-price-various-commodities-various-markets-mandi",
+  "publicArchiveUrl": "https://github.com/vardhaman-rp/AGMARKNET_Commodity_price_ETL_POSTGRES/blob/main/Data.zip",
+  "publicArchiveRetrievedOn": "2026-08-25",
+  "rawSourceSha256": "d89e646edb0c5702c7bec05844aeb1b6f427a95b55b325a15b0327b42fd2e042",
+  "license": "Underlying Government of India data is published under the Government Open Data License - India (OGDL). The public archive repository does not publish a separate license.",
+  "unit": "INR/quintal",
+  "priceFields": [
+    "minimum_price",
+    "maximum_price",
+    "modal_price"
+  ],
+  "primaryReferencePrice": "modal_price",
+  "rawColumns": [
+    "timestamp",
+    "Time",
+    "state",
+    "district",
+    "market",
+    "commodity",
+    "variety",
+    "arrival_date",
+    "min_price",
+    "max_price",
+    "modal_price"
+  ],
+  "rawArchiveRows": 913929,
+  "rawSelectedRows": 258,
+  "preparedRows": 226,
+  "dateFrom": "2021-01-14",
+  "dateThrough": "2021-06-30",
+  "freshnessStatus": "STALE_HISTORICAL",
+  "dateParsing": {
+    "withTime": "MM/DD/YY H:MM",
+    "withoutTime": "DD/MM/YY"
+  },
+  "cleaning": {
+    "requiredColumnsValidated": true,
+    "numericFieldsValidated": [
+      "min_price",
+      "max_price",
+      "modal_price"
+    ],
+    "priceRule": "0 < minimum_price <= modal_price <= maximum_price",
+    "exactDuplicatesRemoved": 32,
+    "invalidDateRowsRemoved": 0,
+    "invalidNumericRowsRemoved": 0,
+    "nonpositivePriceRowsRemoved": 0,
+    "invalidPriceOrderRowsRemoved": 0
+  },
+  "supportedSelections": [
+    {
+      "marketKey": "tomato-pune-local",
+      "commodity": "Tomato",
+      "state": "Maharashtra",
+      "district": "Pune",
+      "market": "Pune",
+      "variety": "Local",
+      "rawSelectedRows": 100,
+      "invalidDateRowsRemoved": 0,
+      "invalidNumericRowsRemoved": 0,
+      "nonpositivePriceRowsRemoved": 0,
+      "invalidPriceOrderRowsRemoved": 0,
+      "duplicateRowsRemoved": 22,
+      "preparedRows": 78,
+      "dateFrom": "2021-01-14",
+      "dateThrough": "2021-06-30"
+    },
+    {
+      "marketKey": "maize-pune-deshi-red",
+      "commodity": "Maize",
+      "state": "Maharashtra",
+      "district": "Pune",
+      "market": "Pune",
+      "variety": "Deshi Red",
+      "rawSelectedRows": 81,
+      "invalidDateRowsRemoved": 0,
+      "invalidNumericRowsRemoved": 0,
+      "nonpositivePriceRowsRemoved": 0,
+      "invalidPriceOrderRowsRemoved": 0,
+      "duplicateRowsRemoved": 4,
+      "preparedRows": 77,
+      "dateFrom": "2021-01-14",
+      "dateThrough": "2021-06-30"
+    },
+    {
+      "marketKey": "groundnut-laxmeshwar-balli-habbu",
+      "commodity": "Groundnut",
+      "state": "Karnataka",
+      "district": "Gadag",
+      "market": "Laxmeshwar",
+      "variety": "Balli/Habbu",
+      "rawSelectedRows": 77,
+      "invalidDateRowsRemoved": 0,
+      "invalidNumericRowsRemoved": 0,
+      "nonpositivePriceRowsRemoved": 0,
+      "invalidPriceOrderRowsRemoved": 0,
+      "duplicateRowsRemoved": 6,
+      "preparedRows": 71,
+      "dateFrom": "2021-01-15",
+      "dateThrough": "2021-06-30"
+    }
+  ],
+  "limitations": [
+    "The observations are historical and end on 2021-06-30; they are not current mandi quotes.",
+    "Only three exact commodity-market-variety combinations are supported.",
+    "The archive contains irregular trading-day observations rather than a continuous daily series.",
+    "The source archive is a public mirror of AGMARKNET-origin records because the official APIs were inaccessible during implementation.",
+    "These observations do not include buyer-specific quality premiums, negotiation, fees, or logistics."
+  ]
+}

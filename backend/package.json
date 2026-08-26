@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "check": "node --check src/index.js"
+    "check": "node --check src/index.js",
+    "test:decision": "node --test tests/decisionEngineService.test.js"
   },
   "keywords": [
     "agrosphere",

@@ -62,6 +62,21 @@ export default function TopNav() {
               <NavLink to="/farmer/crops" className={getLinkClasses}>
                 My Crops
               </NavLink>
+              <NavLink to="/farmer/crop-recommendation" className={getLinkClasses}>
+                Crop Advisor
+              </NavLink>
+              <NavLink to="/farmer/disease-detection" className={getLinkClasses}>
+                Leaf Scanner
+              </NavLink>
+              <NavLink to="/farmer/irrigation-advisor" className={getLinkClasses}>
+                Irrigation Advisor
+              </NavLink>
+              <NavLink to="/farmer/market-intelligence" className={getLinkClasses}>
+                Market Intelligence
+              </NavLink>
+              <NavLink to="/farmer/decision-engine" className={getLinkClasses}>
+                Farm Decision
+              </NavLink>
               <NavLink to="/farmer/orders" className={getLinkClasses}>
                 Farmer Orders
               </NavLink>
