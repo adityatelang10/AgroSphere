@@ -198,7 +198,7 @@ const populateFarmer = {
   select: "farmName location bio averageRating totalReviews",
   populate: {
     path: "user",
-    select: "name email",
+    select: "name email profileImage",
   },
 };
 

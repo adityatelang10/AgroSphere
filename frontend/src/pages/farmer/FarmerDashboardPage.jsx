@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import ScrollReveal from "../../components/ui/ScrollReveal";
 import { getFarmerIntelligenceDashboard } from "../../services/intelligenceDashboardService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 
@@ -70,26 +71,29 @@ function FreshnessBadge({ value }) {
 
 function ModuleCard({ eyebrow, title, freshness, actionPath, actionLabel, children }) {
   return (
-    <article className="flex h-full flex-col rounded-[1.8rem] border border-white/60 bg-white/90 p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950/80">
+    <ScrollReveal
+      as="article"
+      className="flex h-full flex-col rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-950/80"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
             {eyebrow}
           </p>
-          <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
+          <h2 className="mt-2 font-display text-xl font-semibold text-slate-950 dark:text-slate-50">
             {title}
           </h2>
         </div>
         <FreshnessBadge value={freshness} />
       </div>
-      <div className="mt-5 flex-1">{children}</div>
+      <div className="mt-4 flex-1">{children}</div>
       <Link
         to={actionPath}
-        className="mt-6 inline-flex w-fit rounded-full border border-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+        className="mt-5 inline-flex w-fit rounded-full border border-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:text-emerald-300 dark:hover:bg-emerald-950/30 dark:focus-visible:ring-offset-slate-950"
       >
         {actionLabel}
       </Link>
-    </article>
+    </ScrollReveal>
   );
 }
 
@@ -108,7 +112,7 @@ function EmptyModule({ message, detail }) {
 
 function EvidenceStatus({ label, value }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 px-4 py-3 dark:border-slate-800">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3.5 py-2.5 dark:border-slate-800">
       <span className="font-medium text-slate-700 dark:text-slate-200">{label}</span>
       <FreshnessBadge value={value} />
     </div>
@@ -210,14 +214,17 @@ export default function FarmerDashboardPage() {
   } = dashboard;
 
   return (
-    <div className="space-y-7">
-      <section className="overflow-hidden rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-xl dark:border-emerald-950 dark:from-emerald-950/50 dark:via-slate-950 dark:to-lime-950/30 sm:p-8">
+    <div className="space-y-6">
+      <ScrollReveal
+        as="section"
+        className="overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-5 shadow-lg dark:border-emerald-950 dark:from-emerald-950/50 dark:via-slate-950 dark:to-lime-950/30 sm:p-6"
+      >
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-300">
               Farmer Intelligence Dashboard
             </p>
-            <h1 className="mt-3 font-display text-4xl font-bold text-slate-950 dark:text-white">
+            <h1 className="mt-2 font-display text-3xl font-bold text-slate-950 dark:text-white sm:text-4xl">
               Welcome, {farmer.name}
             </h1>
             <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
@@ -225,11 +232,11 @@ export default function FarmerDashboardPage() {
                 "Your latest persisted AgroSphere intelligence"}
             </p>
           </div>
-          <div className="rounded-2xl border border-emerald-200 bg-white/75 px-5 py-4 dark:border-emerald-900 dark:bg-slate-950/60">
+          <div className="rounded-2xl border border-emerald-200 bg-white/75 px-4 py-3 dark:border-emerald-900 dark:bg-slate-950/60">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
               Primary crop
             </p>
-            <p className="mt-1 font-display text-2xl font-semibold text-emerald-800 dark:text-emerald-200">
+            <p className="mt-1 font-display text-xl font-semibold text-emerald-800 dark:text-emerald-200">
               {primaryCrop.label}
             </p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -237,40 +244,43 @@ export default function FarmerDashboardPage() {
             </p>
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
       {nextBestAction.available ? (
-        <section className="rounded-[2rem] border border-slate-800 bg-slate-950 p-7 text-white shadow-2xl sm:p-9">
-          <div className="grid gap-7 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
+        <ScrollReveal
+          as="section"
+          className="rounded-3xl border border-slate-800 bg-slate-950 p-6 text-white shadow-xl sm:p-7"
+        >
+          <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-lime-300">
                 Next Best Action
               </p>
-              <h2 className="mt-4 font-display text-4xl font-bold sm:text-5xl">
+              <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
                 {nextBestAction.title}
               </h2>
-              <div className="mt-5 inline-flex rounded-full bg-emerald-500/20 px-4 py-2 text-base font-semibold text-emerald-200">
+              <div className="mt-4 inline-flex rounded-full bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-200">
                 Priority Score: {nextBestAction.priorityScore} / 100
               </div>
               <p className="mt-4 text-sm text-slate-400">
                 {nextBestAction.decisionVersion} · generated {formatDate(nextBestAction.generatedAt)}
               </p>
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-5 flex flex-wrap gap-3">
                 <Link
                   to="/farmer/decision-engine"
-                  className="rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                  className="rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
                 >
                   Open Full Decision
                 </Link>
                 <Link
                   to="/farmer/what-if-simulator"
-                  className="rounded-full border border-slate-600 px-5 py-3 text-sm font-semibold text-white transition hover:border-lime-300 hover:text-lime-300"
+                  className="rounded-full border border-slate-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-lime-300 hover:text-lime-300"
                 >
                   Run What-If Scenario
                 </Link>
               </div>
             </div>
-            <div className="rounded-3xl bg-white/5 p-6">
+            <div className="rounded-2xl bg-white/5 p-5">
               <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">
                 Why this action?
               </h3>
@@ -288,13 +298,16 @@ export default function FarmerDashboardPage() {
               </ul>
             </div>
           </div>
-        </section>
+        </ScrollReveal>
       ) : (
-        <section className="rounded-[2rem] border border-dashed border-emerald-300 bg-white/90 p-7 shadow-lg dark:border-emerald-800 dark:bg-slate-950/80">
+        <ScrollReveal
+          as="section"
+          className="rounded-3xl border border-dashed border-emerald-300 bg-white/90 p-6 shadow-sm dark:border-emerald-800 dark:bg-slate-950/80"
+        >
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">
             Next Best Action
           </p>
-          <h2 className="mt-3 font-display text-3xl font-semibold text-slate-950 dark:text-slate-50">
+          <h2 className="mt-3 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
             No farm decision has been generated yet.
           </h2>
           <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
@@ -306,11 +319,14 @@ export default function FarmerDashboardPage() {
           >
             Generate Next Best Action
           </Link>
-        </section>
+        </ScrollReveal>
       )}
 
       {decisionNeedsRefresh ? (
-        <section className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-amber-300 bg-amber-50 px-6 py-5 dark:border-amber-900/60 dark:bg-amber-950/30">
+        <ScrollReveal
+          as="section"
+          className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 dark:border-amber-900/60 dark:bg-amber-950/30"
+        >
           <div>
             <p className="font-semibold text-amber-950 dark:text-amber-100">
               New farm evidence is available since the last decision.
@@ -325,16 +341,16 @@ export default function FarmerDashboardPage() {
           >
             Regenerate Decision
           </Link>
-        </section>
+        </ScrollReveal>
       ) : null}
 
-      <section>
+      <ScrollReveal as="section">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-700 dark:text-rose-300">
               Operational alerts
             </p>
-            <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
+            <h2 className="mt-2 font-display text-xl font-semibold text-slate-950 dark:text-slate-50">
               What needs your attention
             </h2>
           </div>
@@ -347,7 +363,7 @@ export default function FarmerDashboardPage() {
             {alerts.map((alert) => (
               <article
                 key={alert.code}
-                className={`rounded-2xl border p-4 ${ALERT_STYLES[alert.category]}`}
+                className={`rounded-2xl border p-3.5 transition duration-300 hover:-translate-y-0.5 hover:shadow-md ${ALERT_STYLES[alert.category]}`}
               >
                 <div className="flex items-start gap-3">
                   <span className="rounded-full bg-white/70 px-2.5 py-1 text-xs font-bold dark:bg-slate-950/40">
@@ -366,9 +382,9 @@ export default function FarmerDashboardPage() {
             No configured urgent, attention, informational, or missing-data alert is active.
           </p>
         )}
-      </section>
+      </ScrollReveal>
 
-      <section className="grid gap-5 lg:grid-cols-2">
+      <section className="grid gap-4 lg:grid-cols-2">
         <ModuleCard
           eyebrow="Crop health"
           title="Latest Leaf Scan"
@@ -561,12 +577,12 @@ export default function FarmerDashboardPage() {
         </ModuleCard>
       </section>
 
-      <section className="grid gap-5 lg:grid-cols-[1.1fr,0.9fr]">
-        <article className="rounded-[1.8rem] border border-white/60 bg-white/90 p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950/80">
+      <ScrollReveal as="section" className="grid gap-4 lg:grid-cols-[1.1fr,0.9fr]">
+        <article className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-950/80">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-300">
             Marketplace operations
           </p>
-          <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
+          <h2 className="mt-2 font-display text-xl font-semibold text-slate-950 dark:text-slate-50">
             Inventory and orders
           </h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -622,11 +638,11 @@ export default function FarmerDashboardPage() {
           </div>
         </article>
 
-        <article className="rounded-[1.8rem] border border-white/60 bg-white/90 p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950/80">
+        <article className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-950/80">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700 dark:text-sky-300">
             Evidence status
           </p>
-          <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
+          <h2 className="mt-2 font-display text-xl font-semibold text-slate-950 dark:text-slate-50">
             Freshness and provenance
           </h2>
           <div className="mt-5 space-y-3">
@@ -640,13 +656,16 @@ export default function FarmerDashboardPage() {
             Disease, irrigation, and crop-plan freshness reuse the Task 7 thresholds. Market evidence remains historical/stale regardless of when its analysis record was saved.
           </p>
         </article>
-      </section>
+      </ScrollReveal>
 
-      <section className="rounded-[2rem] border border-white/60 bg-white/90 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/80">
+      <ScrollReveal
+        as="section"
+        className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/80"
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
           Quick actions
         </p>
-        <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
+        <h2 className="mt-2 font-display text-xl font-semibold text-slate-950 dark:text-slate-50">
           Continue in a detailed farmer tool
         </h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -654,7 +673,7 @@ export default function FarmerDashboardPage() {
             <Link
               key={action.id}
               to={action.path}
-              className="group rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 font-semibold text-slate-800 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-200"
+              className="group rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 font-semibold text-slate-800 transition duration-300 hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-200"
             >
               <span className="flex items-center justify-between gap-3">
                 {action.label}
@@ -663,9 +682,9 @@ export default function FarmerDashboardPage() {
             </Link>
           ))}
         </div>
-      </section>
+      </ScrollReveal>
 
-      <details className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/70">
+      <ScrollReveal as="details" className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
         <summary className="cursor-pointer font-semibold text-slate-900 dark:text-slate-100">
           How this dashboard is generated
         </summary>
@@ -677,7 +696,7 @@ export default function FarmerDashboardPage() {
           <p><strong>Farm decision:</strong> latest deterministic multi-factor DecisionSnapshot.</p>
           <p><strong>Dashboard:</strong> read-only Node aggregation; no model or Gemini is called.</p>
         </div>
-      </details>
+      </ScrollReveal>
     </div>
   );
 }

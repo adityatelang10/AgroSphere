@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+import ModuleHeader from "../../components/ui/ModuleHeader";
+import ScrollReveal from "../../components/ui/ScrollReveal";
+import useResultReveal from "../../hooks/useResultReveal";
 import { requestIrrigationAdvice } from "../../services/irrigationService";
 
 const CROP_OPTIONS = [
@@ -119,6 +122,7 @@ export default function SmartIrrigationPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const resultRef = useResultReveal(result);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -209,144 +213,115 @@ export default function SmartIrrigationPage() {
     }
   };
 
+  const renderNumericField = (fieldName) => {
+    const field = NUMERIC_FIELDS.find((item) => item.name === fieldName);
+
+    return (
+      <label key={field.name} className="block">
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          {field.label}
+        </span>
+        <span className="ml-1 text-[0.68rem] text-slate-400">{field.unit}</span>
+        <input
+          type="number"
+          name={field.name}
+          value={formState[field.name]}
+          onChange={handleChange}
+          min={field.min}
+          max={field.max}
+          step={field.integer ? 1 : "any"}
+          required
+          disabled={isSubmitting}
+          className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+        />
+        {fieldErrors[field.name] ? (
+          <span className="mt-1 block text-xs text-rose-600 dark:text-rose-400">
+            {fieldErrors[field.name]}
+          </span>
+        ) : null}
+      </label>
+    );
+  };
+
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[2rem] border border-white/60 bg-white/85 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/75 sm:p-8">
-        <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">
-          Smart Irrigation Advisor
-        </p>
-        <h1 className="mt-3 font-display text-4xl font-bold text-slate-950 dark:text-slate-50">
-          Understand when crop water needs attention.
-        </h1>
-        <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-          AgroSphere uses a transparent FAO-style crop-water calculation: Hargreaves
-          reference evapotranspiration, a crop-stage coefficient, rainfall, and soil-water
-          stress. This is a deterministic agronomic engine, not a trained ML classifier.
-        </p>
-        <p className="mt-3 max-w-4xl text-xs leading-6 text-amber-700 dark:text-amber-300">
+    <div className="space-y-6">
+      <ModuleHeader
+        title="Smart Irrigation"
+        category="Agronomic Decision Engine"
+        method="Hargreaves ETo + crop-stage Kc"
+        icon="water"
+        tone="water"
+        description="Assess crop-water status from manual field observations, rainfall, and a transparent FAO-style calculation."
+      >
+        <p className="max-w-4xl text-xs leading-6 text-amber-700 dark:text-amber-300">
           Enter manual field observations. Humidity is intentionally not requested because
           the selected Hargreaves ETo equation does not use it; wind, radiation, and
           automatic weather data are not available in this version.
         </p>
-      </section>
+      </ModuleHeader>
 
-      <div className="grid gap-6 xl:grid-cols-[1.08fr,0.92fr]">
-        <section className="rounded-[2rem] border border-white/60 bg-white/90 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/80">
-          <h2 className="font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
-            Crop and field conditions
-          </h2>
+      <ScrollReveal as="section" className="mx-auto w-full max-w-7xl rounded-3xl border border-sky-200/80 bg-white/90 p-4 shadow-sm dark:border-sky-950 dark:bg-slate-950/80 sm:p-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700 dark:text-sky-300">Field observations</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">Build the water-balance context</h2>
+          </div>
 
-          <form onSubmit={handleSubmit} className="mt-6 grid gap-5 sm:grid-cols-2">
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Crop
-              </span>
-              <select
-                name="crop"
-                value={formState.crop}
-                onChange={handleChange}
-                disabled={isSubmitting}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                {CROP_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+            <fieldset className="rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 pb-3 pt-2.5 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+              <legend className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-200">Crop &amp; soil</legend>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Crop</span>
+                  <select name="crop" value={formState.crop} onChange={handleChange} disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                    {CROP_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Growth stage</span>
+                  <select name="growthStage" value={formState.growthStage} onChange={handleChange} disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                    {STAGE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Soil reference profile</span>
+                  <select name="soilType" value={formState.soilType} onChange={handleChange} disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                    {SOIL_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+                {renderNumericField("soilMoisture")}
+              </div>
+            </fieldset>
 
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Growth stage
-              </span>
-              <select
-                name="growthStage"
-                value={formState.growthStage}
-                onChange={handleChange}
-                disabled={isSubmitting}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                {STAGE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <fieldset className="rounded-2xl border border-sky-200 bg-sky-50/70 px-4 pb-3 pt-2.5 dark:border-sky-900/50 dark:bg-sky-950/20">
+              <legend className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-sky-800 dark:text-sky-200">Weather</legend>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {renderNumericField("minimumTemperature")}
+                {renderNumericField("maximumTemperature")}
+                {renderNumericField("recentRainfall")}
+                {renderNumericField("forecastRainfall")}
+              </div>
+            </fieldset>
 
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Soil reference profile
-              </span>
-              <select
-                name="soilType"
-                value={formState.soilType}
-                onChange={handleChange}
-                disabled={isSubmitting}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                {SOIL_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 pb-3 pt-2.5 dark:border-slate-800 dark:bg-slate-900/60">
+              <legend className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 dark:text-slate-200">Field context</legend>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {renderNumericField("latitude")}
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Observation date</span>
+                  <input type="date" name="observationDate" value={formState.observationDate} onChange={handleChange} required disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+                  {fieldErrors.observationDate ? <span className="mt-1 block text-xs text-rose-600">{fieldErrors.observationDate}</span> : null}
+                </label>
+                {renderNumericField("daysSinceLastIrrigation")}
+              </div>
+            </fieldset>
 
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Observation date
-              </span>
-              <input
-                type="date"
-                name="observationDate"
-                value={formState.observationDate}
-                onChange={handleChange}
-                required
-                disabled={isSubmitting}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
-              {fieldErrors.observationDate ? (
-                <span className="mt-1 block text-xs text-rose-600">
-                  {fieldErrors.observationDate}
-                </span>
-              ) : null}
-            </label>
-
-            {NUMERIC_FIELDS.map((field) => (
-              <label key={field.name} className="block">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {field.label}
-                </span>
-                <span className="ml-2 text-xs text-slate-400">{field.unit}</span>
-                <input
-                  type="number"
-                  name={field.name}
-                  value={formState[field.name]}
-                  onChange={handleChange}
-                  min={field.min}
-                  max={field.max}
-                  step={field.integer ? 1 : "any"}
-                  required
-                  disabled={isSubmitting}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                />
-                {fieldErrors[field.name] ? (
-                  <span className="mt-1 block text-xs text-rose-600 dark:text-rose-400">
-                    {fieldErrors[field.name]}
-                  </span>
-                ) : null}
-              </label>
-            ))}
-
-            <p className="text-xs leading-6 text-slate-500 dark:text-slate-400 sm:col-span-2">
+            <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
               “Rain since moisture reading” prevents double-counting. If the moisture value
               was measured after the latest rain, enter 0 for recent rainfall.
             </p>
 
             {error ? (
-              <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 sm:col-span-2">
+              <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
                 {error}
               </p>
             ) : null}
@@ -354,65 +329,39 @@ export default function SmartIrrigationPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-400 sm:col-span-2"
+              className="mx-auto block w-full max-w-sm rounded-2xl bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-400 dark:focus-visible:ring-offset-slate-950"
             >
               {isSubmitting
                 ? "Analyzing crop-water conditions..."
                 : "Calculate irrigation advice"}
             </button>
           </form>
-        </section>
+      </ScrollReveal>
 
-        <section className="rounded-[2rem] border border-white/60 bg-slate-950 p-6 text-white shadow-xl dark:border-slate-800">
-          {!result ? (
-            <div className="flex min-h-[44rem] flex-col justify-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lime-300">
-                Transparent decision support
-              </p>
-              <h2 className="mt-3 font-display text-3xl font-semibold">
-                Your irrigation recommendation will appear here.
-              </h2>
-              <div className="mt-7 space-y-3 text-sm leading-7 text-slate-400">
-                <p>1. Hargreaves estimates reference ETo from temperature and solar geometry.</p>
-                <p>2. Crop-stage Kc converts ETo into crop water requirement.</p>
-                <p>3. Soil moisture and crop depletion limits determine water stress.</p>
-                <p>4. Effective rainfall and recent irrigation influence timing.</p>
-              </div>
-              <p className="mt-7 text-xs leading-6 text-amber-200">
-                Supported crops: Tomato, field Maize, Cotton, and Groundnut. Paddy Rice is
-                intentionally excluded because it requires a specialised flooded-field water
-                balance.
-              </p>
-            </div>
-          ) : (
+      {result ? (
+        <div ref={resultRef} className="scroll-mt-24 border-t border-slate-200 pt-6 dark:border-slate-800">
+          <ScrollReveal as="section" className="mx-auto w-full max-w-7xl overflow-hidden rounded-3xl border border-sky-900 bg-slate-950 text-white shadow-xl">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lime-300">
-                Irrigation recommendation
-              </p>
-              <h2 className="mt-3 font-display text-4xl font-bold">
-                {result.recommendedTiming}
-              </h2>
+              <div className="bg-gradient-to-br from-sky-700/35 via-slate-950 to-slate-950 p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-300">Water status</p>
+                <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+                  <div>
+                    <p className="font-display text-3xl font-bold">{result.waterStress} Stress</p>
+                    <h2 className="mt-4 font-display text-4xl font-bold text-white">{result.recommendedTiming}</h2>
+                  </div>
+                  <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${getStressClasses(result.waterStress)}`}>
+                    Irrigation required: {result.irrigationRequired ? "Yes" : "No"}
+                  </span>
+                </div>
 
-              <div className="mt-5 flex flex-wrap gap-3">
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    result.irrigationRequired
-                      ? "bg-sky-500/20 text-sky-200"
-                      : "bg-emerald-500/20 text-emerald-200"
-                  }`}
-                >
-                  Irrigation required: {result.irrigationRequired ? "Yes" : "No"}
-                </span>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${getStressClasses(
-                    result.waterStress
-                  )}`}
-                >
-                  Water stress: {result.waterStress}
-                </span>
+                <div className="mt-6 grid grid-cols-3 gap-2" aria-label={`Water stress: ${result.waterStress}`}>
+                  {["Low", "Medium", "High"].map((level) => (
+                    <div key={level} className={`h-2 rounded-full ${level === result.waterStress ? level === "High" ? "bg-rose-400" : level === "Medium" ? "bg-amber-400" : "bg-emerald-400" : "bg-white/10"}`} />
+                  ))}
+                </div>
               </div>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4">
                 {[
                   {
                     label: "Reference ETo",
@@ -431,14 +380,14 @@ export default function SmartIrrigationPage() {
                     value: `${formatNumber(result.estimatedIrrigationNeed)} mm`,
                   },
                 ].map((metric) => (
-                  <article key={metric.label} className="rounded-2xl bg-white/5 p-4">
-                    <p className="text-xs text-slate-500">{metric.label}</p>
-                    <p className="mt-2 text-lg font-semibold text-white">{metric.value}</p>
+                  <article key={metric.label} className="rounded-2xl border border-sky-900/60 bg-sky-950/30 p-4">
+                    <p className="text-xs text-sky-300">{metric.label}</p>
+                    <p className="mt-2 font-display text-xl font-semibold text-white">{metric.value}</p>
                   </article>
                 ))}
               </div>
 
-              <div className="mt-5 rounded-2xl bg-white/5 p-4 text-sm leading-7 text-slate-300">
+              <div className="mx-6 rounded-2xl bg-white/5 p-4 text-sm leading-7 text-slate-300">
                 <p>
                   <span className="text-slate-500">Soil moisture status:</span>{" "}
                   {result.soilMoistureStatus}
@@ -456,11 +405,11 @@ export default function SmartIrrigationPage() {
                 </p>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
+              <div className="mx-6 mt-5 rounded-2xl border border-sky-500/30 bg-sky-500/10 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-300">
                   Why?
                 </p>
-                <ul className="mt-3 space-y-2 text-sm leading-6 text-emerald-100">
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-sky-100">
                   {result.reasons.map((reason) => (
                     <li key={reason} className="flex gap-2">
                       <span aria-hidden="true">•</span>
@@ -471,7 +420,7 @@ export default function SmartIrrigationPage() {
               </div>
 
               {result.warnings?.length ? (
-                <div className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+                <div className="mx-6 mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">
                     Check these inputs
                   </p>
@@ -483,7 +432,7 @@ export default function SmartIrrigationPage() {
                 </div>
               ) : null}
 
-              <details className="mt-5 rounded-2xl border border-slate-700 p-4">
+              <details className="mx-6 mt-5 rounded-2xl border border-slate-700 p-4">
                 <summary className="cursor-pointer text-sm font-semibold text-slate-200">
                   Calculation assumptions
                 </summary>
@@ -494,15 +443,15 @@ export default function SmartIrrigationPage() {
                 </ul>
               </details>
 
-              <p className="mt-6 text-xs leading-6 text-amber-200">
+              <p className="p-6 text-xs leading-6 text-amber-200">
                 This is a decision-support estimate. Actual irrigation requirements can vary
                 with field conditions, measurement quality, irrigation efficiency, runoff,
                 drainage, crop variety, and local agronomic practices.
               </p>
             </div>
-          )}
-        </section>
-      </div>
+          </ScrollReveal>
+        </div>
+      ) : null}
     </div>
   );
 }

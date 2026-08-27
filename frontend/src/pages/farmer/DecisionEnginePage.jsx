@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
+import ModuleHeader from "../../components/ui/ModuleHeader";
+import ScrollReveal from "../../components/ui/ScrollReveal";
+import useResultReveal from "../../hooks/useResultReveal";
 import {
   getDecisionEvidence,
   requestFarmDecision,
@@ -40,6 +43,9 @@ const initialFormState = {
   storageCost: "0",
   otherCost: "0",
 };
+
+const CONTROL_CLASSES =
+  "mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
 
 const EVIDENCE_LABELS = {
   cropRecommendation: "Crop Recommendation",
@@ -83,7 +89,8 @@ const EvidenceCard = ({ evidenceKey, item }) => {
         : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200";
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+    <article className="relative rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+      <span className="absolute -top-3 left-1/2 hidden h-3 w-px bg-amber-300/70 xl:block" aria-hidden="true" />
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
@@ -99,7 +106,11 @@ const EvidenceCard = ({ evidenceKey, item }) => {
       </div>
 
       {!isMissing ? (
-        <div className="mt-3 space-y-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
+        <details className="mt-2">
+          <summary className="cursor-pointer text-xs font-semibold text-amber-700 dark:text-amber-300">
+            View evidence details
+          </summary>
+        <div className="mt-2 space-y-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
           {evidenceKey === "cropRecommendation" ? (
             <p>
               Recommended: <span className="font-semibold">{item.data.recommendedCrop}</span> · planning information only
@@ -141,6 +152,7 @@ const EvidenceCard = ({ evidenceKey, item }) => {
           ) : null}
           <p className="pt-1 text-xs text-slate-500 dark:text-slate-400">{item.usageNote}</p>
         </div>
+        </details>
       ) : null}
     </article>
   );
@@ -155,6 +167,7 @@ export default function DecisionEnginePage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const resultRef = useResultReveal(result);
 
   useEffect(() => {
     let ignore = false;
@@ -277,42 +290,60 @@ export default function DecisionEnginePage() {
   const evidence = result?.evidence || evidencePreview?.evidence;
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-[2rem] border border-white/60 bg-white/85 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/75 sm:p-8">
-        <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">
-          Explainable Farm Decision Engine
-        </p>
-        <h1 className="mt-3 font-display text-4xl font-bold text-slate-950 dark:text-slate-50">
-          Turn stored farm evidence into one next best action.
-        </h1>
-        <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-          decision-v1 uses transparent Node.js rules, persisted AgroSphere module outputs, and only the current values you enter. It does not call Gemini, predict a future market price, or invent missing farm data.
-        </p>
-        <p className="mt-3 text-xs font-semibold text-amber-700 dark:text-amber-300">
+    <div className="space-y-6">
+      <ModuleHeader
+        title="Farm Decision"
+        category="Explainable Decision Support"
+        method="Multi-factor rules · decision-v1"
+        icon="decision"
+        tone="decision"
+        description="Combine persisted AgroSphere evidence and your current farm constraints into one explainable next best action."
+      >
+        <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
           Priority score is a deterministic ranking score, not a probability of correctness.
         </p>
-      </section>
+      </ModuleHeader>
 
-      <div className="grid gap-6 xl:grid-cols-[0.9fr,1.1fr]">
-        <section className="rounded-[2rem] border border-white/60 bg-white/90 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/80">
-          <h2 className="font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
-            Current farm context
-          </h2>
-          <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
+      <ScrollReveal as="section" className="rounded-3xl border border-amber-200/80 bg-white/90 p-4 shadow-sm dark:border-amber-950 dark:bg-slate-950/80 sm:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-300">Current evidence</p>
+            <h2 className="mt-1 font-display text-xl font-semibold text-slate-950 dark:text-slate-50">Latest records for {selectedCropLabel}</h2>
+          </div>
+          {isLoadingEvidence ? <p className="text-sm text-slate-500">Loading stored evidence...</p> : null}
+        </div>
+        {evidenceError ? <p className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{evidenceError}</p> : null}
+        {evidence ? (
+          <div className="relative mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <span className="absolute -top-3 left-[10%] right-[10%] hidden h-px bg-amber-300/50 xl:block" aria-hidden="true" />
+            {Object.keys(EVIDENCE_LABELS).map((key) => <EvidenceCard key={key} evidenceKey={key} item={evidence[key]} />)}
+          </div>
+        ) : null}
+      </ScrollReveal>
+
+        <ScrollReveal as="section" className="rounded-3xl border border-slate-200/80 bg-white/90 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/80 sm:p-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 dark:text-slate-300">Current operating context</p>
+              <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">Describe the decision boundary</h2>
+            </div>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Farmer-entered now</span>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
             These fields describe one current scenario. Farmer identity always comes from your authenticated session.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-6 grid gap-5 sm:grid-cols-2">
+          <form onSubmit={handleSubmit} className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Current crop</span>
-              <select name="selectedCrop" value={formState.selectedCrop} onChange={handleChange} disabled={isSubmitting} className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <select name="selectedCrop" value={formState.selectedCrop} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
                 {CROP_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Crop / produce state</span>
-              <select name="farmState" value={formState.farmState} onChange={handleChange} disabled={isSubmitting} className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <select name="farmState" value={formState.farmState} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
                 <option value="growing">Growing crop</option>
                 <option value="harvest_ready">Harvest-ready</option>
                 <option value="harvested">Harvested produce</option>
@@ -321,20 +352,20 @@ export default function DecisionEnginePage() {
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Available quantity</span>
-              <input type="number" name="availableQuantity" value={formState.availableQuantity} onChange={handleChange} min="0" step="any" disabled={isSubmitting} className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              <input type="number" name="availableQuantity" value={formState.availableQuantity} onChange={handleChange} min="0" step="any" disabled={isSubmitting} className={CONTROL_CLASSES} />
               {fieldErrors.availableQuantity ? <span className="mt-1 block text-xs text-rose-600">{fieldErrors.availableQuantity}</span> : null}
             </label>
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Quantity unit</span>
-              <select name="quantityUnit" value={formState.quantityUnit} onChange={handleChange} disabled={isSubmitting} className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <select name="quantityUnit" value={formState.quantityUnit} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
                 {QUANTITY_UNITS.map((unit) => <option key={unit} value={unit}>{unit}</option>)}
               </select>
             </label>
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Water availability</span>
-              <select name="waterAvailability" value={formState.waterAvailability} onChange={handleChange} disabled={isSubmitting} className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <select name="waterAvailability" value={formState.waterAvailability} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
                 <option value="adequate">Adequate</option>
                 <option value="limited">Limited</option>
                 <option value="unavailable">Unavailable</option>
@@ -343,7 +374,7 @@ export default function DecisionEnginePage() {
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Storage available</span>
-              <select name="storageAvailable" value={formState.storageAvailable} onChange={handleChange} disabled={isSubmitting} className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <select name="storageAvailable" value={formState.storageAvailable} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
                 <option value="false">No</option>
                 <option value="true">Yes</option>
               </select>
@@ -352,7 +383,7 @@ export default function DecisionEnginePage() {
             <label className="block sm:col-span-2">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Current buyer / listing price</span>
               <span className="ml-2 text-xs text-slate-400">₹ per selected quantity unit · optional</span>
-              <input type="number" name="currentSalePrice" value={formState.currentSalePrice} onChange={handleChange} min="0.01" step="any" disabled={isSubmitting} placeholder="Farmer-entered current offer only" className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              <input type="number" name="currentSalePrice" value={formState.currentSalePrice} onChange={handleChange} min="0.01" step="any" disabled={isSubmitting} placeholder="Farmer-entered current offer only" className={CONTROL_CLASSES} />
               {fieldErrors.currentSalePrice ? <span className="mt-1 block text-xs text-rose-600">{fieldErrors.currentSalePrice}</span> : null}
             </label>
 
@@ -364,102 +395,80 @@ export default function DecisionEnginePage() {
               <label key={name} className="block">
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{label}</span>
                 <span className="ml-2 text-xs text-slate-400">₹ total</span>
-                <input type="number" name={name} value={formState[name]} onChange={handleChange} min="0" step="any" disabled={isSubmitting} className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                <input type="number" name={name} value={formState[name]} onChange={handleChange} min="0" step="any" disabled={isSubmitting} className={CONTROL_CLASSES} />
                 {fieldErrors[name] ? <span className="mt-1 block text-xs text-rose-600">{fieldErrors[name]}</span> : null}
               </label>
             ))}
 
-            <p className="rounded-2xl bg-violet-50 px-4 py-3 text-xs leading-6 text-violet-800 dark:bg-violet-950/30 dark:text-violet-200 sm:col-span-2">
+            <p className="rounded-2xl bg-violet-50 px-4 py-2.5 text-xs leading-5 text-violet-800 dark:bg-violet-950/30 dark:text-violet-200 sm:col-span-2 lg:col-span-4">
               Manual economics = quantity × your current price − entered transport, storage, and other costs. Cultivation cost is excluded unless you include it under other costs.
             </p>
 
-            {error ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 sm:col-span-2">{error}</p> : null}
+            {error ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 sm:col-span-2 lg:col-span-4">{error}</p> : null}
 
-            <button type="submit" disabled={isSubmitting || isLoadingEvidence} className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-400 sm:col-span-2">
+            <button type="submit" disabled={isSubmitting || isLoadingEvidence} className="mx-auto w-full max-w-sm rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-400 sm:col-span-2 lg:col-span-4">
               {isSubmitting ? "Evaluating candidate actions..." : "Generate Next Best Action"}
             </button>
           </form>
-        </section>
+        </ScrollReveal>
 
-        <section className="rounded-[2rem] border border-white/60 bg-slate-950 p-6 text-white shadow-xl dark:border-slate-800">
-          {!result ? (
-            <div className="flex min-h-[42rem] flex-col justify-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lime-300">Next best action</p>
-              <h2 className="mt-3 font-display text-3xl font-semibold">Review evidence and evaluate one current scenario.</h2>
-              <div className="mt-7 space-y-3 text-sm leading-7 text-slate-400">
-                <p>1. Choose the crop and its real current state.</p>
-                <p>2. Enter operational constraints and any current manual price.</p>
-                <p>3. Stored disease, irrigation, market, recommendation, and inventory evidence is loaded automatically.</p>
-                <p>4. decision-v1 ranks feasible actions and exposes every scoring factor.</p>
-              </div>
-            </div>
-          ) : (
+      {result ? (
+        <div ref={resultRef} className="scroll-mt-24 space-y-6 border-t border-slate-200 pt-6 dark:border-slate-800">
+          <ScrollReveal as="section" className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 text-white shadow-2xl">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-lime-300">Next best action</p>
-              <h2 className="mt-3 font-display text-4xl font-bold">{result.nextBestAction.title}</h2>
-              <div className="mt-4 inline-flex rounded-full bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-200">
-                Priority Score: {result.nextBestAction.score} / 100
+              <div className="grid gap-7 bg-gradient-to-br from-amber-500/15 via-slate-950 to-slate-950 p-6 lg:grid-cols-[1.15fr,0.85fr] lg:items-center sm:p-8">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">Next best action</p>
+                  <h2 className="mt-4 font-display text-4xl font-bold sm:text-6xl">{result.nextBestAction.title}</h2>
+                  <p className="mt-4 text-xs text-slate-400">{result.decisionVersion} · generated {formatDateTime(result.generatedAt)}</p>
+                </div>
+                <div className="rounded-3xl border border-amber-300/30 bg-amber-300/10 p-6 text-center">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Priority Score</p>
+                  <p className="mt-2 font-display text-5xl font-bold text-white">{result.nextBestAction.score}</p>
+                  <p className="mt-1 text-sm text-amber-200">/ 100</p>
+                  <p className="mt-3 text-xs leading-5 text-slate-400">Deterministic ranking, not confidence</p>
+                </div>
               </div>
-              <p className="mt-3 text-xs text-slate-400">{result.decisionVersion} · generated {formatDateTime(result.generatedAt)}</p>
 
-              <div className="mt-7 rounded-2xl bg-white/5 p-5">
-                <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Why?</h3>
-                <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-200">
-                  {result.why.map((reason) => <li key={reason} className="flex gap-3"><span className="text-lime-300">✓</span><span>{reason}</span></li>)}
-                </ul>
-              </div>
-
-              <div className="mt-5">
-                <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">Other options</h3>
-                <div className="mt-3 space-y-3">
-                  {result.alternatives.map((alternative, index) => (
-                    <article key={alternative.code} className="rounded-2xl border border-slate-800 p-4">
-                      <div className="flex justify-between gap-3"><p className="font-semibold">{index + 2}. {alternative.title}</p><p className="text-sky-300">{alternative.score}/100</p></div>
-                      <p className="mt-2 text-xs leading-5 text-slate-400">{alternative.reason}</p>
-                    </article>
-                  ))}
+              <div className="grid gap-5 p-6 lg:grid-cols-[1.1fr,0.9fr]">
+                <div className="rounded-2xl bg-white/5 p-5">
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Why this action?</h3>
+                  <ol className="mt-4 space-y-3 text-sm leading-6 text-slate-200">
+                    {result.why.map((reason, index) => <li key={reason} className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-300/15 text-xs font-bold text-amber-300">{index + 1}</span><span>{reason}</span></li>)}
+                  </ol>
+                </div>
+                <div className="rounded-2xl border border-slate-800 p-5">
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">Ranked alternatives</h3>
+                  <div className="mt-3 divide-y divide-slate-800">
+                    {result.alternatives.map((alternative, index) => (
+                      <div key={alternative.code} className="flex items-start justify-between gap-3 py-3">
+                        <div><p className="font-semibold">{index + 2}. {alternative.title}</p><p className="mt-1 text-xs leading-5 text-slate-500">{alternative.reason}</p></div>
+                        <span className="shrink-0 text-sm font-bold text-sky-300">{alternative.score}/100</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {result.farmerContext.currentSalePrice !== null ? (
-                <div className="mt-5 rounded-2xl border border-violet-500/25 bg-violet-500/10 p-4 text-sm">
+                <div className="mx-6 mb-6 rounded-2xl border border-violet-500/25 bg-violet-500/10 p-4 text-sm">
                   <p className="font-semibold text-violet-200">Manual current economics</p>
                   <p className="mt-2 text-violet-100">Gross {formatMoney(result.farmerContext.grossSaleValue)} − entered costs {formatMoney(result.farmerContext.totalEnteredCosts)} = estimated net return {formatMoney(result.farmerContext.estimatedNetReturn)}</p>
                   <p className="mt-2 text-xs text-violet-200/70">No future price or profit is forecast.</p>
                 </div>
               ) : null}
             </div>
-          )}
-        </section>
-      </div>
+          </ScrollReveal>
 
-      <section className="rounded-[2rem] border border-white/60 bg-white/90 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/80">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">Evidence used</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">Latest records for {selectedCropLabel}</h2>
-          </div>
-          {isLoadingEvidence ? <p className="text-sm text-slate-500">Loading stored evidence...</p> : null}
-        </div>
-        {evidenceError ? <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{evidenceError}</p> : null}
-        {evidence ? (
-          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {Object.keys(EVIDENCE_LABELS).map((key) => <EvidenceCard key={key} evidenceKey={key} item={evidence[key]} />)}
-          </div>
-        ) : null}
-      </section>
-
-      {result ? (
-        <>
-          <section className="rounded-[2rem] border border-white/60 bg-white/90 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/80">
+          <ScrollReveal as="section" className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/80 sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-700 dark:text-violet-300">Candidate evaluation</p>
             <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">Every action and factor</h2>
             <div className="mt-5 space-y-3">
               {result.candidateActions.map((candidate) => (
-                <details key={candidate.code} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+                <details key={candidate.code} className={`rounded-2xl border p-4 ${candidate.status === "SCORED" ? "border-slate-200 dark:border-slate-800" : "border-rose-200 bg-rose-50/70 dark:border-rose-900/50 dark:bg-rose-950/20"}`}>
                   <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3">
                     <span className="font-semibold text-slate-900 dark:text-slate-100">{candidate.title}</span>
-                    <span className="text-sm text-slate-500 dark:text-slate-400">{candidate.status === "SCORED" ? `${candidate.score} / 100` : humanize(candidate.status)}</span>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${candidate.status === "SCORED" ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" : "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"}`}>{candidate.status === "SCORED" ? `${candidate.score} / 100` : humanize(candidate.status)}</span>
                   </summary>
                   <div className="mt-4 space-y-3 border-t border-slate-100 pt-4 dark:border-slate-800">
                     {candidate.factors.map((factor, index) => (
@@ -474,7 +483,7 @@ export default function DecisionEnginePage() {
                 </details>
               ))}
             </div>
-          </section>
+          </ScrollReveal>
 
           <section className="grid gap-5 lg:grid-cols-2">
             <article className="rounded-[2rem] border border-amber-200 bg-amber-50 p-6 dark:border-amber-900/40 dark:bg-amber-950/20">
@@ -490,7 +499,7 @@ export default function DecisionEnginePage() {
               <p className="mt-4 rounded-2xl bg-white p-4 text-xs leading-6 text-slate-600 dark:bg-slate-950 dark:text-slate-300">{result.disclaimer}</p>
             </article>
           </section>
-        </>
+        </div>
       ) : null}
     </div>
   );

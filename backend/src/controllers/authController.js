@@ -149,6 +149,7 @@ const sanitizeUser = (user) => ({
   email: user.email,
   role: user.role,
   deliveryAddress: user.deliveryAddress,
+  profileImage: user.profileImage || null,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });

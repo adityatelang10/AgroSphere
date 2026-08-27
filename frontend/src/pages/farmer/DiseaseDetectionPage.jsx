@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
+import ModuleHeader from "../../components/ui/ModuleHeader";
+import ScrollReveal from "../../components/ui/ScrollReveal";
+import useResultReveal from "../../hooks/useResultReveal";
 import { requestDiseaseDetection } from "../../services/diseaseDetectionService";
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -43,6 +46,7 @@ export default function DiseaseDetectionPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const resultRef = useResultReveal(result);
 
   useEffect(
     () => () => {
@@ -131,35 +135,43 @@ export default function DiseaseDetectionPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[2rem] border border-white/60 bg-white/85 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/75 sm:p-8">
-        <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">
-          AI Leaf Disease Detection
-        </p>
-        <h1 className="mt-3 font-display text-4xl font-bold text-slate-950 dark:text-slate-50">
-          Scan a supported crop leaf.
-        </h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-          Upload a clear leaf image. AgroSphere sends it through the authenticated Node API
-          to a trained computer-vision model and returns its strongest supported class.
-        </p>
-        <p className="mt-3 max-w-3xl text-xs leading-6 text-amber-700 dark:text-amber-300">
+    <div className="space-y-6">
+      <ModuleHeader
+        title="Leaf Scanner"
+        category="Deep Learning Classification"
+        method="MobileNetV2"
+        icon="leaf"
+        tone="diagnostic"
+        description="Upload a clear crop-leaf photo for classification against the model’s supported crop-condition classes."
+      >
+        <p className="max-w-4xl text-xs leading-6 text-amber-700 dark:text-amber-300">
           This model currently supports selected Bell Pepper, Potato, and Tomato leaf
           conditions only. Unsupported plants or symptoms can still be misclassified as a
           known class.
         </p>
-      </section>
+      </ModuleHeader>
 
-      <div className="grid gap-6 xl:grid-cols-[1.02fr,0.98fr]">
-        <section className="rounded-[2rem] border border-white/60 bg-white/90 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/80">
-          <h2 className="font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
-            Upload a clear image of a crop leaf
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-            JPEG, JPG, PNG, or WEBP · maximum 5 MB · one leaf image per scan
-          </p>
+      <ScrollReveal
+        as="section"
+        className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-cyan-200/80 bg-white/90 shadow-lg dark:border-cyan-950 dark:bg-slate-950/80"
+      >
+        <div className="border-b border-cyan-100 bg-cyan-50/70 px-5 py-4 dark:border-cyan-950 dark:bg-cyan-950/20 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-300">
+                Visual diagnostic workspace
+              </p>
+              <h2 className="mt-1 font-display text-xl font-semibold text-slate-950 dark:text-slate-50">
+                Upload leaf image → preview → classification
+              </h2>
+            </div>
+            <span className="rounded-full border border-cyan-200 bg-white px-3 py-1 text-xs font-semibold text-cyan-800 dark:border-cyan-900 dark:bg-slate-950 dark:text-cyan-200">
+              JPEG · PNG · WEBP · max 5 MB
+            </span>
+          </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-3 p-4 sm:p-5">
             <input
               ref={fileInputRef}
               id="leaf-image"
@@ -168,35 +180,46 @@ export default function DiseaseDetectionPage() {
               accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
               onChange={handleFileChange}
               disabled={isSubmitting}
-              className="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 file:mr-4 file:rounded-full file:border-0 file:bg-emerald-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+              className="sr-only"
             />
-            <label
-              htmlFor="leaf-image"
-              className="flex min-h-72 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[1.75rem] border-2 border-dashed border-emerald-200 bg-emerald-50/60 p-5 text-center transition hover:border-emerald-500 dark:border-emerald-900 dark:bg-emerald-950/20"
-            >
+            <div className="relative flex min-h-[18rem] flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-cyan-300 bg-gradient-to-br from-cyan-50 via-white to-emerald-50 p-4 text-center dark:border-cyan-900 dark:from-cyan-950/30 dark:via-slate-950 dark:to-emerald-950/20 sm:min-h-[20rem]">
               {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt="Selected leaf preview"
-                  className="max-h-64 w-full rounded-2xl object-contain"
-                />
+                <>
+                  <img
+                    src={previewUrl}
+                    alt="Selected leaf preview"
+                    className="max-h-[17rem] w-full rounded-2xl object-contain sm:max-h-[19rem]"
+                  />
+                  <span className="pointer-events-none absolute inset-x-8 top-1/2 h-px bg-cyan-400/70 shadow-[0_0_18px_rgba(34,211,238,0.8)]" aria-hidden="true" />
+                </>
               ) : (
                 <>
-                  <span className="text-5xl" aria-hidden="true">
-                    &#127811;
+                  <span className="flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-200 bg-white text-cyan-700 shadow-sm dark:border-cyan-900 dark:bg-slate-900 dark:text-cyan-300" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-8 w-8">
+                      <path d="M12 16V4m0 0L8 8m4-4 4 4" />
+                      <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+                    </svg>
                   </span>
-                  <span className="mt-4 font-semibold text-emerald-800 dark:text-emerald-300">
-                    Choose a leaf image
-                  </span>
-                  <span className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                    Use a focused photo with the affected leaf clearly visible.
-                  </span>
+                  <h3 className="mt-3 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
+                    Select a leaf image
+                  </h3>
+                  <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">
+                    Use a focused photo with one supported crop leaf clearly visible.
+                  </p>
                 </>
               )}
-            </label>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSubmitting}
+                className="relative mt-3 rounded-full bg-cyan-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-400 dark:focus-visible:ring-offset-slate-950"
+              >
+                {previewUrl ? "Choose another image" : "Browse image"}
+              </button>
+            </div>
 
             {imageFile ? (
-              <div className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm dark:bg-slate-900">
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900">
                 <div className="min-w-0">
                   <p className="truncate font-medium text-slate-800 dark:text-slate-100">
                     {imageFile.name}
@@ -214,7 +237,7 @@ export default function DiseaseDetectionPage() {
                     }
                     selectImage(null);
                   }}
-                  className="text-xs font-semibold text-rose-600 hover:text-rose-500"
+                  className="rounded-full px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 hover:text-rose-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:bg-rose-950/30"
                 >
                   Remove
                 </button>
@@ -230,41 +253,26 @@ export default function DiseaseDetectionPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="mx-auto block w-full max-w-sm rounded-2xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-400 dark:bg-cyan-700 dark:hover:bg-cyan-600 dark:focus-visible:ring-offset-slate-950"
             >
-              {isSubmitting ? "Analyzing leaf image..." : "Analyze leaf"}
+              {isSubmitting ? "Analyzing leaf image..." : "Analyze Leaf"}
             </button>
           </form>
-        </section>
+      </ScrollReveal>
 
-        <section className="rounded-[2rem] border border-white/60 bg-slate-950 p-6 text-white shadow-xl dark:border-slate-800">
-          {!result ? (
-            <div className="flex min-h-[34rem] flex-col justify-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lime-300">
-                Supported scope
+      {result ? (
+        <div ref={resultRef} className="scroll-mt-24 border-t border-slate-200 pt-6 dark:border-slate-800">
+          <ScrollReveal
+            as="section"
+            className="mx-auto w-full max-w-5xl rounded-3xl bg-slate-950 p-5 text-white shadow-xl sm:p-6"
+          >
+            <div className="grid gap-6 lg:grid-cols-[0.9fr,1.1fr]">
+              <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">
+                Detection result
               </p>
-              <h2 className="mt-3 font-display text-2xl font-semibold">
-                15 crop-condition classes
-              </h2>
-              <div className="mt-6 space-y-4">
-                {SUPPORTED_CLASS_GROUPS.map((group) => (
-                  <article key={group.crop} className="rounded-2xl bg-white/5 p-4">
-                    <h3 className="font-semibold text-white">{group.crop}</h3>
-                    <p className="mt-2 text-xs leading-6 text-slate-400">
-                      {group.conditions.join(" · ")}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lime-300">
-                Detected condition
-              </p>
-              <h2 className="mt-3 font-display text-4xl font-bold">
-                {result.crop} — {result.condition}
-              </h2>
+              <p className="mt-4 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">{result.crop}</p>
+              <h2 className="mt-1 font-display text-4xl font-bold sm:text-5xl">{result.condition}</h2>
               <span
                 className={`mt-4 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                   result.isHealthy
@@ -275,16 +283,18 @@ export default function DiseaseDetectionPage() {
                 {result.isHealthy ? "Healthy supported class" : "Disease class detected"}
               </span>
 
-              <article className="mt-7 rounded-2xl border border-slate-700 bg-slate-900 p-5">
+              <article className="mt-7 rounded-3xl border border-cyan-500/30 bg-cyan-500/10 p-5">
                 <p className="text-sm text-slate-400">Model confidence</p>
-                <p className="mt-2 font-display text-4xl font-bold text-lime-300">
+                <p className="mt-2 font-display text-4xl font-bold text-cyan-300">
                   {formatConfidence(result.confidence)}
                 </p>
                 <p className="mt-2 text-xs text-slate-500">
-                  This score is for one prediction; it is not overall test accuracy.
+                  Classification strength for this image; not disease severity or overall test accuracy.
                 </p>
               </article>
+              </div>
 
+              <div>
               <div className="mt-5 rounded-2xl bg-white/5 p-4 text-sm leading-7 text-slate-300">
                 <p>
                   <span className="text-slate-500">Model:</span> {result.modelVersion}
@@ -299,11 +309,22 @@ export default function DiseaseDetectionPage() {
                 </p>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
+              <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                {SUPPORTED_CLASS_GROUPS.map((group) => (
+                  <article key={group.crop} className="rounded-2xl border border-slate-800 bg-white/5 p-3">
+                    <h3 className="text-sm font-semibold text-white">{group.crop}</h3>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      {group.conditions.length} supported classes
+                    </p>
+                  </article>
+                ))}
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
                   Cautious next step
                 </p>
-                <p className="mt-2 text-sm leading-7 text-emerald-100">{result.guidance}</p>
+                <p className="mt-2 text-sm leading-7 text-cyan-100">{result.guidance}</p>
               </div>
 
               <p className="mt-6 text-xs leading-6 text-amber-200">
@@ -311,10 +332,11 @@ export default function DiseaseDetectionPage() {
                 multiple causes, so confirm important treatment decisions with local
                 agricultural expertise. The model cannot recognize every crop or disease.
               </p>
+              </div>
             </div>
-          )}
-        </section>
-      </div>
+          </ScrollReveal>
+        </div>
+      ) : null}
     </div>
   );
 }

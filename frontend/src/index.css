@@ -36,6 +36,33 @@ body {
   min-height: 100vh;
 }
 
+.scroll-reveal {
+  opacity: 0;
+  translate: 0 16px;
+  transition:
+    opacity 500ms ease,
+    translate 500ms ease;
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.scroll-reveal.is-visible {
+  opacity: 1;
+  translate: 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .scroll-reveal,
+  .scroll-reveal.is-visible {
+    opacity: 1;
+    translate: none;
+    transition: none;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import UserAvatar from "../../components/profile/UserAvatar";
 import { listCrops } from "../../services/cropService";
 import { formatCurrency } from "../../utils/formatters";
 
@@ -53,15 +54,24 @@ export default function FarmerProfilePage() {
   return (
     <div className="space-y-8">
       <section className="rounded-[2rem] border border-white/60 bg-white/85 p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950/75">
-        <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">
-          Farmer Profile
-        </p>
-        <h1 className="mt-3 font-display text-4xl font-bold text-slate-950 dark:text-slate-50">
-          {farmer.farmName}
-        </h1>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          {farmer.location?.district}, {farmer.location?.state}
-        </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <UserAvatar
+            name={farmer.user?.name}
+            imageUrl={farmer.user?.profileImage?.url}
+            className="h-20 w-20 text-xl ring-4 ring-emerald-100 dark:ring-emerald-950"
+          />
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">
+              Farmer Profile
+            </p>
+            <h1 className="mt-2 font-display text-4xl font-bold text-slate-950 dark:text-slate-50">
+              {farmer.farmName}
+            </h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {farmer.user?.name ? `${farmer.user.name} · ` : ""}{farmer.location?.district}, {farmer.location?.state}
+            </p>
+          </div>
+        </div>
         <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-300">
           {farmer.bio || "This farmer has not added a detailed profile bio yet."}
         </p>

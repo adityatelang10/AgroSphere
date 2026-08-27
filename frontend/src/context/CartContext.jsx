@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
+import { getCartMetrics } from "../utils/cartCalculations";
+
 const CartContext = createContext(null);
 const STORAGE_KEY = "agrosphere-cart";
 
@@ -92,10 +94,6 @@ export function CartProvider({ children }) {
 
   const updateQuantity = (cropId, quantity) => {
     setItems((currentItems) => {
-      if (quantity <= 0) {
-        return currentItems.filter((item) => item.cropId !== cropId);
-      }
-
       return currentItems.map((item) => {
         if (item.cropId !== cropId) {
           return item;
@@ -107,7 +105,10 @@ export function CartProvider({ children }) {
 
         return {
           ...item,
-          quantity: Math.min(asPositiveNumber(quantity, 1), maximumQuantity),
+          quantity: Math.max(
+            1,
+            Math.min(asPositiveNumber(quantity, 1), maximumQuantity)
+          ),
         };
       });
     });
@@ -121,14 +122,14 @@ export function CartProvider({ children }) {
     setItems([]);
   };
 
-  const itemCount = items.reduce((total, item) => total + item.quantity, 0);
-  const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
+  const { uniqueItemCount, totalQuantity, subtotal } = getCartMetrics(items);
 
   return (
     <CartContext.Provider
       value={{
         items,
-        itemCount,
+        uniqueItemCount,
+        totalQuantity,
         subtotal,
         addToCart,
         updateQuantity,

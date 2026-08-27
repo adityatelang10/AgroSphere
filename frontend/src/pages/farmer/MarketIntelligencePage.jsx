@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
 
+import ModuleHeader from "../../components/ui/ModuleHeader";
+import ScrollReveal from "../../components/ui/ScrollReveal";
+import useResultReveal from "../../hooks/useResultReveal";
 import { requestMarketIntelligence } from "../../services/marketIntelligenceService";
 
 const MARKET_OPTIONS = [
@@ -107,6 +110,7 @@ export default function MarketIntelligencePage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const resultRef = useResultReveal(result);
 
   const cropOptions = useMemo(
     () =>
@@ -217,44 +221,39 @@ export default function MarketIntelligencePage() {
   };
 
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[2rem] border border-white/60 bg-white/85 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/75 sm:p-8">
-        <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">
-          Market Intelligence &amp; Profit Analysis
-        </p>
-        <h1 className="mt-3 font-display text-4xl font-bold text-slate-950 dark:text-slate-50">
-          Explore historical mandi prices and a manual return scenario.
-        </h1>
-        <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-          market-v1 analyzes a documented AGMARKNET historical subset. It does not use a
-          live price feed, does not predict a future price, and does not tell you whether
-          to sell or wait.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">
-            HISTORICAL — latest observation 30 Jun 2021
+    <div className="space-y-6">
+      <ModuleHeader
+        title="Market Intelligence"
+        category="Historical Statistical Analysis"
+        method="AGMARKNET subset · market-v1"
+        icon="market"
+        tone="market"
+        description="Review a documented historical mandi reference, its recent stored trend, and a manual return calculation."
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-900 dark:bg-amber-500/15 dark:text-amber-200">
+            HISTORICAL DATA · last observation 30 Jun 2021
           </span>
-          <span className="rounded-full bg-slate-200 px-3 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-            FORECAST UNAVAILABLE
-          </span>
-          <span className="rounded-full bg-violet-100 px-3 py-1 text-violet-800 dark:bg-violet-500/15 dark:text-violet-200">
-            COST INPUTS ARE MANUAL SCENARIOS
+          <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">
+            Not a current mandi price · no future forecast
           </span>
         </div>
-      </section>
+      </ModuleHeader>
 
-      <div className="grid gap-6 xl:grid-cols-[0.9fr,1.1fr]">
-        <section className="rounded-[2rem] border border-white/60 bg-white/90 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/80">
-          <h2 className="font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
-            Market and return inputs
-          </h2>
-          <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Quantity and price must use quintals and ₹/quintal. Your AgroSphere listing
-            price remains separate and is never changed by this page.
-          </p>
+      <ScrollReveal as="section" className="mx-auto w-full max-w-7xl rounded-3xl border border-violet-200/80 bg-white/90 p-4 shadow-sm dark:border-violet-950 dark:bg-slate-950/80 sm:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-700 dark:text-violet-300">Analysis setup</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">Choose a historical market and enter a manual return scenario</h2>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Units: quintals and ₹/quintal</p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="mt-6 grid gap-5 sm:grid-cols-2">
-            <label className="block">
+        <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+          <fieldset className="rounded-2xl border border-violet-200 bg-violet-50/60 px-4 pb-3 pt-2.5 dark:border-violet-900/50 dark:bg-violet-950/20">
+            <legend className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-violet-800 dark:text-violet-200">Historical market selector</legend>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Crop
               </span>
@@ -263,7 +262,7 @@ export default function MarketIntelligencePage() {
                 value={formState.crop}
                 onChange={handleChange}
                 disabled={isSubmitting}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               >
                 {cropOptions.map((option) => (
                   <option key={option.crop} value={option.crop}>
@@ -271,9 +270,9 @@ export default function MarketIntelligencePage() {
                   </option>
                 ))}
               </select>
-            </label>
+              </label>
 
-            <label className="block">
+              <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Supported market
               </span>
@@ -282,7 +281,7 @@ export default function MarketIntelligencePage() {
                 value={formState.marketKey}
                 onChange={handleChange}
                 disabled={isSubmitting}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               >
                 {availableMarkets.map((option) => (
                   <option key={option.marketKey} value={option.marketKey}>
@@ -298,8 +297,13 @@ export default function MarketIntelligencePage() {
                   {fieldErrors.marketKey}
                 </span>
               ) : null}
-            </label>
+              </label>
+            </div>
+          </fieldset>
 
+          <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 pb-3 pt-2.5 dark:border-slate-800 dark:bg-slate-900/60">
+            <legend className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 dark:text-slate-200">Manual return calculator</legend>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {NUMERIC_FIELDS.map((field) => (
               <label key={field.name} className="block">
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -315,7 +319,7 @@ export default function MarketIntelligencePage() {
                   step="any"
                   required={field.required}
                   disabled={isSubmitting}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 />
                 {fieldErrors[field.name] ? (
                   <span className="mt-1 block text-xs text-rose-600 dark:text-rose-400">
@@ -324,15 +328,17 @@ export default function MarketIntelligencePage() {
                 ) : null}
               </label>
             ))}
+            </div>
+          </fieldset>
 
-            <p className="rounded-2xl bg-violet-50 px-4 py-3 text-xs leading-6 text-violet-800 dark:bg-violet-950/30 dark:text-violet-200 sm:col-span-2">
+            <p className="rounded-2xl bg-violet-50 px-4 py-2.5 text-xs leading-5 text-violet-800 dark:bg-violet-950/30 dark:text-violet-200">
               Manual scenario: expected sale price and costs come from you. They are not
               fetched, predicted, or generated by Gemini. Zero cost means that cost was not
               included.
             </p>
 
             {error ? (
-              <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 sm:col-span-2">
+              <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
                 {error}
               </p>
             ) : null}
@@ -340,33 +346,27 @@ export default function MarketIntelligencePage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-400 sm:col-span-2"
+              className="mx-auto block w-full max-w-sm rounded-2xl bg-violet-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-400 dark:focus-visible:ring-offset-slate-950"
             >
               {isSubmitting
                 ? "Analyzing historical prices..."
                 : "Analyze market and calculate return"}
             </button>
           </form>
-        </section>
+      </ScrollReveal>
 
-        <section className="rounded-[2rem] border border-white/60 bg-slate-950 p-6 text-white shadow-xl dark:border-slate-800">
-          {!result ? (
-            <div className="flex min-h-[42rem] flex-col justify-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lime-300">
-                Explainable market analysis
-              </p>
-              <h2 className="mt-3 font-display text-3xl font-semibold">
-                Historical prices and your return scenario will appear here.
-              </h2>
-              <div className="mt-7 space-y-3 text-sm leading-7 text-slate-400">
-                <p>1. Select one exact crop, market, and variety supported by the dataset.</p>
-                <p>2. Review the latest historical minimum, modal, and maximum price.</p>
-                <p>3. Compare two five-observation modal-price averages for the trend.</p>
-                <p>4. Subtract only your entered costs from your manual gross-sale scenario.</p>
-              </div>
-            </div>
-          ) : (
+      {result ? (
+        <div ref={resultRef} className="scroll-mt-24 space-y-6 border-t border-slate-200 pt-6 dark:border-slate-800">
+          <ScrollReveal as="section" className="rounded-3xl border border-slate-800 bg-slate-950 p-5 text-white shadow-xl sm:p-6">
             <div>
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-400/40 bg-amber-400/10 p-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">Historical data</p>
+                  <p className="mt-1 font-semibold text-amber-100">Last observation: {formatDate(result.referencePrice.observedDate)}</p>
+                </div>
+                <p className="text-sm font-bold text-amber-200">Not a current mandi price</p>
+              </div>
+
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">
@@ -379,9 +379,7 @@ export default function MarketIntelligencePage() {
                     {result.selection.district}, {result.selection.state} · {result.selection.variety}
                   </p>
                 </div>
-                <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-200">
-                  HISTORICAL / STALE
-                </span>
+                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">{result.analysisVersion || "market-v1"}</span>
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -390,10 +388,17 @@ export default function MarketIntelligencePage() {
                   ["Modal", result.referencePrice.modalPrice],
                   ["Maximum", result.referencePrice.maximumPrice],
                 ].map(([label, value]) => (
-                  <article key={label} className="rounded-2xl bg-white/5 p-4">
-                    <p className="text-xs text-slate-500">{label} price</p>
-                    <p className="mt-2 text-xl font-semibold">{formatMoney(value)}</p>
-                    <p className="mt-1 text-xs text-slate-500">per quintal</p>
+                  <article
+                    key={label}
+                    className={`rounded-2xl border p-4 ${
+                      label === "Modal"
+                        ? "border-violet-400/50 bg-violet-500/15 shadow-lg shadow-violet-950/20"
+                        : "border-slate-800 bg-white/5"
+                    }`}
+                  >
+                    <p className={`text-xs ${label === "Modal" ? "font-semibold uppercase tracking-[0.16em] text-violet-300" : "text-slate-500"}`}>{label} price</p>
+                    <p className={`mt-2 font-display font-semibold ${label === "Modal" ? "text-3xl text-white" : "text-xl"}`}>{formatMoney(value)}</p>
+                    <p className="mt-1 text-xs text-slate-500">per quintal{label === "Modal" ? " · primary reference" : ""}</p>
                   </article>
                 ))}
               </div>
@@ -404,53 +409,33 @@ export default function MarketIntelligencePage() {
                 and is the primary reference used by market-v1.
               </p>
 
-              <div className="mt-5 rounded-2xl border border-sky-500/25 bg-sky-500/10 p-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200">
-                    Recent historical trend
-                  </p>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      trendClasses[result.trend.direction]
-                    }`}
-                  >
-                    {result.trend.direction}
-                  </span>
+              <div className="mt-5 rounded-2xl border border-sky-500/25 bg-sky-500/10 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200">Historical trend</p>
+                <div className="mt-3 grid gap-4 sm:grid-cols-[0.8fr,1.2fr] sm:items-end">
+                  <div>
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${trendClasses[result.trend.direction]}`}>{result.trend.direction}</span>
+                    <p className="mt-2 font-display text-3xl font-bold text-sky-100">
+                      {result.trend.percentageChange > 0 ? "+" : ""}{formatNumber(result.trend.percentageChange)}%
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-slate-950/30 p-3"><p className="text-xs text-sky-200/60">Previous 5 avg</p><p className="mt-1 font-semibold">{formatMoney(result.trend.previousAverage)}</p></div>
+                    <div className="rounded-xl bg-slate-950/30 p-3"><p className="text-xs text-sky-200/60">Recent 5 avg</p><p className="mt-1 font-semibold">{formatMoney(result.trend.recentAverage)}</p></div>
+                  </div>
                 </div>
-                <p className="mt-3 text-sm leading-7 text-sky-100">
-                  Latest 5-observation average: {formatMoney(result.trend.recentAverage)};
-                  previous 5: {formatMoney(result.trend.previousAverage)}. Change:{" "}
-                  {result.trend.percentageChange > 0 ? "+" : ""}
-                  {formatNumber(result.trend.percentageChange)}%.
-                </p>
                 <p className="mt-2 text-xs leading-6 text-sky-200/70">
                   {result.trend.rule}
                 </p>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-violet-500/25 bg-violet-500/10 p-4">
+              <div className="mt-5 rounded-2xl border border-violet-500/25 bg-violet-500/10 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">
-                  Manual scenario — estimated net return
+                  Manual return calculator
                 </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  <div>
-                    <p className="text-xs text-violet-200/60">Gross sale value</p>
-                    <p className="mt-1 text-lg font-semibold">
-                      {formatMoney(result.profitAnalysis.grossSaleValue)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-violet-200/60">Entered costs</p>
-                    <p className="mt-1 text-lg font-semibold">
-                      {formatMoney(result.profitAnalysis.totalEnteredCosts)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-violet-200/60">Estimated net return</p>
-                    <p className="mt-1 text-lg font-semibold">
-                      {formatMoney(result.profitAnalysis.estimatedNetReturn)}
-                    </p>
-                  </div>
+                <div className="mt-4 divide-y divide-violet-300/15 rounded-2xl bg-slate-950/30 px-4">
+                  <div className="flex items-center justify-between gap-4 py-3 text-sm"><span className="text-violet-200/70">Gross value</span><strong>{formatMoney(result.profitAnalysis.grossSaleValue)}</strong></div>
+                  <div className="flex items-center justify-between gap-4 py-3 text-sm"><span className="text-violet-200/70">Entered costs</span><strong className="text-rose-200">− {formatMoney(result.profitAnalysis.totalEnteredCosts)}</strong></div>
+                  <div className="flex items-center justify-between gap-4 py-4"><span className="font-semibold text-violet-100">Estimated Net Return</span><strong className="font-display text-2xl text-violet-200">{formatMoney(result.profitAnalysis.estimatedNetReturn)}</strong></div>
                 </div>
                 <p className="mt-3 text-xs leading-6 text-violet-100/75">
                   Quantity × your expected sale price − transport − storage − other entered
@@ -468,13 +453,9 @@ export default function MarketIntelligencePage() {
                 </p>
               </div>
             </div>
-          )}
-        </section>
-      </div>
+          </ScrollReveal>
 
-      {result ? (
-        <>
-          <section className="rounded-[2rem] border border-white/60 bg-white/90 p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950/80">
+          <ScrollReveal as="section" className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/80 sm:p-6">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
@@ -522,9 +503,9 @@ export default function MarketIntelligencePage() {
                 </tbody>
               </table>
             </div>
-          </section>
+          </ScrollReveal>
 
-          <section className="rounded-[2rem] border border-amber-200 bg-amber-50 p-6 shadow-lg dark:border-amber-900/40 dark:bg-amber-950/20">
+          <ScrollReveal as="section" className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm dark:border-amber-900/40 dark:bg-amber-950/20 sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 dark:text-amber-300">
               Data provenance
             </p>
@@ -560,8 +541,8 @@ export default function MarketIntelligencePage() {
             <p className="mt-4 text-xs leading-6 text-amber-900 dark:text-amber-100">
               {result.disclaimer}
             </p>
-          </section>
-        </>
+          </ScrollReveal>
+        </div>
       ) : null}
     </div>
   );

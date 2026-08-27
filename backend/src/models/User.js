@@ -44,6 +44,22 @@ const deliveryAddressSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const profileImageSchema = new mongoose.Schema(
+  {
+    url: {
+      type: String,
+      trim: true,
+      required: [true, "Profile image URL is required"],
+    },
+    publicId: {
+      type: String,
+      trim: true,
+      required: [true, "Profile image public id is required"],
+    },
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -75,6 +91,10 @@ const userSchema = new mongoose.Schema(
     },
     deliveryAddress: {
       type: deliveryAddressSchema,
+      default: undefined,
+    },
+    profileImage: {
+      type: profileImageSchema,
       default: undefined,
     },
   },

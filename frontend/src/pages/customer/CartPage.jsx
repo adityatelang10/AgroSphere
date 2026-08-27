@@ -17,7 +17,15 @@ function BasketIcon({ className = "" }) {
 export default function CartPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { items, itemCount, subtotal, updateQuantity, removeFromCart, clearCart } = useCart();
+  const {
+    items,
+    uniqueItemCount,
+    totalQuantity,
+    subtotal,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+  } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [error, setError] = useState("");
 
@@ -73,7 +81,9 @@ export default function CartPage() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-400">Farm-direct checkout</p>
             <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-slate-950 dark:text-white">Your harvest cart</h1>
-            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{itemCount} item{itemCount === 1 ? "" : "s"} selected from local farms. Adjust quantities any time before checkout.</p>
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+              {uniqueItemCount} different product{uniqueItemCount === 1 ? "" : "s"} · {totalQuantity} total unit{totalQuantity === 1 ? "" : "s"}. Adjust quantities any time before checkout.
+            </p>
           </div>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/25"><BasketIcon className="h-7 w-7" /></div>
         </div>
@@ -96,7 +106,7 @@ export default function CartPage() {
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{formatCurrency(item.price)} / {item.unit}</p>
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-900">
-                      <button type="button" aria-label={`Decrease ${item.name} quantity`} onClick={() => updateQuantity(item.cropId, item.quantity - 1)} className="h-8 w-8 rounded-lg text-xl text-slate-600 transition hover:bg-white hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-slate-800">−</button>
+                      <button type="button" aria-label={`Decrease ${item.name} quantity`} disabled={item.quantity <= 1} onClick={() => updateQuantity(item.cropId, item.quantity - 1)} className="h-8 w-8 rounded-lg text-xl text-slate-600 transition hover:bg-white hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-300 dark:hover:bg-slate-800">−</button>
                       <span className="min-w-10 px-2 text-center text-sm font-bold text-slate-900 dark:text-white">{item.quantity}</span>
                       <button type="button" aria-label={`Increase ${item.name} quantity`} disabled={atStockLimit} onClick={() => updateQuantity(item.cropId, item.quantity + 1)} className="h-8 w-8 rounded-lg text-xl text-slate-600 transition hover:bg-white hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-300 dark:hover:bg-slate-800">+</button>
                     </div>
@@ -113,7 +123,7 @@ export default function CartPage() {
         <aside className="h-fit rounded-[1.75rem] border border-white/60 bg-slate-950 p-6 text-white shadow-xl xl:sticky xl:top-28 dark:border-slate-800">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-lime-300">Order summary</p>
           <div className="mt-6 space-y-3 text-sm text-slate-300">
-            <div className="flex justify-between"><span>Produce ({itemCount})</span><span>{formatCurrency(subtotal)}</span></div>
+            <div className="flex justify-between gap-4"><span>Produce ({uniqueItemCount} product{uniqueItemCount === 1 ? "" : "s"} · {totalQuantity} unit{totalQuantity === 1 ? "" : "s"})</span><span>{formatCurrency(subtotal)}</span></div>
             <div className="flex justify-between"><span>Payment</span><span className="font-semibold text-lime-300">Not processed in app</span></div>
             <div className="flex justify-between border-t border-slate-700 pt-4 font-display text-xl font-bold text-white"><span>Total</span><span>{formatCurrency(subtotal)}</span></div>
           </div>
