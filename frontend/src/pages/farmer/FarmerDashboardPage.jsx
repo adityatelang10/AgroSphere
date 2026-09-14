@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import ScrollReveal from "../../components/ui/ScrollReveal";
+import DashboardWeatherCard from "../../components/weather/DashboardWeatherCard";
 import { getFarmerIntelligenceDashboard } from "../../services/intelligenceDashboardService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 
@@ -35,6 +36,8 @@ const FRESHNESS_STYLES = {
     "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-200",
   MISSING: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
   NEW_EVIDENCE_AVAILABLE:
+    "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
+  DECISION_OUTDATED:
     "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
   LATEST_STORED_DECISION:
     "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
@@ -246,6 +249,8 @@ export default function FarmerDashboardPage() {
         </div>
       </ScrollReveal>
 
+      <DashboardWeatherCard />
+
       {nextBestAction.available ? (
         <ScrollReveal
           as="section"
@@ -254,11 +259,12 @@ export default function FarmerDashboardPage() {
           <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-lime-300">
-                Next Best Action
+                {decisionNeedsRefresh ? "Saved Next Best Action" : "Next Best Action"}
               </p>
               <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
                 {nextBestAction.title}
               </h2>
+              <div className="mt-3"><FreshnessBadge value={freshness.decision} /></div>
               <div className="mt-4 inline-flex rounded-full bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-200">
                 Priority Score: {nextBestAction.priorityScore} / 100
               </div>
@@ -270,7 +276,7 @@ export default function FarmerDashboardPage() {
                   to="/farmer/decision-engine"
                   className="rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
                 >
-                  Open Full Decision
+                  {decisionNeedsRefresh ? "Regenerate Farm Decision" : "Open Full Decision"}
                 </Link>
                 <Link
                   to="/farmer/what-if-simulator"
@@ -282,7 +288,7 @@ export default function FarmerDashboardPage() {
             </div>
             <div className="rounded-2xl bg-white/5 p-5">
               <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">
-                Why this action?
+                {decisionNeedsRefresh ? "Reasons saved with this decision" : "Why this action?"}
               </h3>
               <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-200">
                 {nextBestAction.reasons.length ? (
@@ -329,17 +335,18 @@ export default function FarmerDashboardPage() {
         >
           <div>
             <p className="font-semibold text-amber-950 dark:text-amber-100">
-              New farm evidence is available since the last decision.
+              Decision may be outdated.
             </p>
             <p className="mt-1 text-sm text-amber-800 dark:text-amber-200">
-              The stored decision may be outdated. It has not been regenerated automatically.
+              {alerts.find((alert) => alert.code === "DECISION_REFRESH")?.message ||
+                "Review current evidence and regenerate Farm Decision."}
             </p>
           </div>
           <Link
             to="/farmer/decision-engine"
             className="rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
           >
-            Regenerate Decision
+            Regenerate Farm Decision
           </Link>
         </ScrollReveal>
       ) : null}
@@ -460,6 +467,11 @@ export default function FarmerDashboardPage() {
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Engine: {irrigation.engineVersion} · generated {formatDate(irrigation.generatedAt)}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {irrigation.timestampSource === "createdAt" ? "Legacy evidence time" : "Observation time"}:{" "}
+                {irrigation.evidenceAt ? formatDate(irrigation.evidenceAt) : "Not available"}
+                {" · "}{irrigation.note}
               </p>
             </div>
           ) : (

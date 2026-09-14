@@ -22,6 +22,7 @@ import CropDetailsPage from "./pages/marketplace/CropDetailsPage";
 import MarketplacePage from "./pages/marketplace/MarketplacePage";
 import ProfilePage from "./pages/profile/ProfilePage";
 import NotFoundPage from "./pages/shared/NotFoundPage";
+import PublicTraceabilityPage from "./pages/traceability/PublicTraceabilityPage";
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/marketplace" element={<MarketplacePage />} />
         <Route path="/crop/:id" element={<CropDetailsPage />} />
         <Route path="/farmer/:id" element={<FarmerProfilePage />} />
+        <Route path="/trace/:traceabilityId" element={<PublicTraceabilityPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/profile" element={<ProfilePage />} />

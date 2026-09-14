@@ -3,6 +3,11 @@ const { body, param, query, validationResult } = require("express-validator");
 const { deleteFromCloudinary, uploadBufferToCloudinary } = require("../config/cloudinary");
 const Crop = require("../models/Crop");
 const FarmerProfile = require("../models/FarmerProfile");
+const { serializePublicCrop } = require("../utils/publicCrop");
+const {
+  assignTraceabilityIdToExistingCrop,
+  createAvailableTraceabilityId,
+} = require("../services/traceabilityService");
 
 const SUPPORTED_UNITS = [
   "kg",
@@ -151,6 +156,12 @@ const buildCropPayload = (body) => {
     payload.season = body.season;
   }
 
+  if (typeof body.harvestDate !== "undefined") {
+    payload.harvestDate = body.harvestDate
+      ? new Date(`${String(body.harvestDate).slice(0, 10)}T00:00:00.000Z`)
+      : null;
+  }
+
   if (typeof body.isOrganic !== "undefined") {
     payload.isOrganic = parseBoolean(body.isOrganic);
   }
@@ -193,12 +204,22 @@ const uploadImages = async (files) => {
 
 const getFarmerProfileForUser = async (userId) => FarmerProfile.findOne({ user: userId });
 
+// Existing owner-only mutation responses keep their internal image metadata.
 const populateFarmer = {
   path: "farmer",
   select: "farmName location bio averageRating totalReviews",
   populate: {
     path: "user",
     select: "name email profileImage",
+  },
+};
+
+const populatePublicFarmer = {
+  path: "farmer",
+  select: "farmName location bio averageRating totalReviews user",
+  populate: {
+    path: "user",
+    select: "name profileImage.url",
   },
 };
 
@@ -251,6 +272,10 @@ const createCropValidation = [
     .optional()
     .custom((value) => typeof parseBoolean(value) === "boolean")
     .withMessage("isOrganic must be true or false"),
+  body("harvestDate")
+    .optional({ checkFalsy: true })
+    .isISO8601({ strict: true })
+    .withMessage("Harvest date must be a valid date in YYYY-MM-DD format"),
   body().custom((_, { req }) => validateLocationInput(req.body, { requireBoth: true })),
 ];
 
@@ -293,6 +318,10 @@ const updateCropValidation = [
     .optional()
     .custom((value) => typeof parseBoolean(value) === "boolean")
     .withMessage("isOrganic must be true or false"),
+  body("harvestDate")
+    .optional({ checkFalsy: true })
+    .isISO8601({ strict: true })
+    .withMessage("Harvest date must be a valid date in YYYY-MM-DD format"),
   body().custom((_, { req }) => validateLocationInput(req.body)),
 ];
 
@@ -349,11 +378,13 @@ const createCrop = async (req, res, next) => {
     uploadedImages = await uploadImages(req.files);
 
     const cropPayload = buildCropPayload(req.body);
+    const traceabilityId = await createAvailableTraceabilityId(Crop, cropPayload.name);
 
     const crop = await Crop.create({
       ...cropPayload,
       farmer: farmerProfile._id,
       images: uploadedImages,
+      traceabilityId,
     });
     cropCreated = true;
 
@@ -367,6 +398,54 @@ const createCrop = async (req, res, next) => {
       await Promise.allSettled(uploadedImages.map((image) => deleteFromCloudinary(image.publicId)));
     }
 
+    return next(error);
+  }
+};
+
+const ensureCropTraceability = async (req, res, next) => {
+  const validationErrorResponse = handleValidation(req, res);
+  if (validationErrorResponse) {
+    return validationErrorResponse;
+  }
+
+  try {
+    const farmerProfile = await getFarmerProfileForUser(req.user._id);
+
+    if (!farmerProfile) {
+      return res.status(404).json({
+        success: false,
+        message: "Farmer profile not found",
+      });
+    }
+
+    const crop = await Crop.findById(req.params.id);
+
+    if (!crop) {
+      return res.status(404).json({
+        success: false,
+        message: "Crop not found",
+      });
+    }
+
+    if (!crop.farmer.equals(farmerProfile._id)) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only create traceability records for your own crop listings",
+      });
+    }
+
+    const traceabilityId = await assignTraceabilityIdToExistingCrop(Crop, crop);
+    const cropWithTraceability = await Crop.findById(crop._id).populate(populateFarmer);
+
+    return res.status(200).json({
+      success: true,
+      message: crop.traceabilityId
+        ? "Crop traceability record already exists"
+        : "Crop traceability record created successfully",
+      traceabilityId,
+      crop: cropWithTraceability,
+    });
+  } catch (error) {
     return next(error);
   }
 };
@@ -418,7 +497,7 @@ const listCrops = async (req, res, next) => {
       filter["location.state"] = new RegExp(`^${escapeRegex(state)}$`, "i");
     }
 
-    const queryBuilder = Crop.find(filter).populate(populateFarmer);
+    const queryBuilder = Crop.find(filter).populate(populatePublicFarmer);
 
     if (search) {
       queryBuilder.sort({ score: { $meta: "textScore" } });
@@ -431,7 +510,7 @@ const listCrops = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       count: crops.length,
-      crops,
+      crops: crops.map(serializePublicCrop),
     });
   } catch (error) {
     return next(error);
@@ -445,7 +524,7 @@ const getCropById = async (req, res, next) => {
   }
 
   try {
-    const crop = await Crop.findById(req.params.id).populate(populateFarmer);
+    const crop = await Crop.findById(req.params.id).populate(populatePublicFarmer);
 
     if (!crop) {
       return res.status(404).json({
@@ -456,7 +535,7 @@ const getCropById = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      crop,
+      crop: serializePublicCrop(crop),
     });
   } catch (error) {
     return next(error);
@@ -589,6 +668,7 @@ module.exports = {
   updateCropValidation,
   listCropValidation,
   cropIdValidation,
+  ensureCropTraceability,
   createCrop,
   listCrops,
   getCropById,

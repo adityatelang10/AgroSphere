@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-import { getCartMetrics } from "../utils/cartCalculations";
+import {
+  getCartAfterPaymentVerification,
+  getCartMetrics,
+} from "../utils/cartCalculations";
 
 const CartContext = createContext(null);
 const STORAGE_KEY = "agrosphere-cart";
@@ -122,6 +125,12 @@ export function CartProvider({ children }) {
     setItems([]);
   };
 
+  const removePurchasedItems = (cropIds, verification) => {
+    setItems((currentItems) =>
+      getCartAfterPaymentVerification(currentItems, cropIds, verification)
+    );
+  };
+
   const { uniqueItemCount, totalQuantity, subtotal } = getCartMetrics(items);
 
   return (
@@ -135,6 +144,7 @@ export function CartProvider({ children }) {
         updateQuantity,
         removeFromCart,
         clearCart,
+        removePurchasedItems,
       }}
     >
       {children}

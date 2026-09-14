@@ -6,9 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:copilot": "node --test --test-isolation=none scripts/speechAssistant.test.mjs",
+    "test:traceability-qr": "node scripts/verifyTraceQr.cjs",
+    "test:payments": "node --test --test-isolation=none scripts/paymentCartBehavior.test.mjs"
   },
   "dependencies": {
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.1",
@@ -17,6 +21,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.20",
+    "jsqr": "^1.4.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "vite": "^5.4.11"

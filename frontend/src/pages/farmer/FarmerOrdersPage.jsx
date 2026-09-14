@@ -106,7 +106,15 @@ export default function FarmerOrdersPage() {
                       </button>
                     ) : null}
                   </div>
+
                 </div>
+
+                {order.paymentStatus === "VERIFIED" ? (
+                  <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-sm dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                    <p className="font-semibold text-emerald-800 dark:text-emerald-200">Customer test payment verified</p>
+                    <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">Razorpay · Test Mode · This is not a real settlement.</p>
+                  </div>
+                ) : null}
 
                 <div className="mt-5 grid gap-4 lg:grid-cols-[1fr,18rem]">
                   <div className="space-y-3">

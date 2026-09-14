@@ -1,6 +1,4 @@
-const jwt = require("jsonwebtoken");
-
-const User = require("../models/User");
+const { getUserFromToken } = require("../utils/authToken");
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -13,12 +11,7 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET is missing from environment variables.");
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return res.status(401).json({

@@ -92,6 +92,49 @@ const orderSchema = new mongoose.Schema(
       default: "Pending",
       index: true,
     },
+    paymentMethod: {
+      type: String,
+      enum: ["razorpay_test"],
+      default: undefined,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["VERIFIED"],
+      default: undefined,
+      index: true,
+    },
+    paymentProvider: {
+      type: String,
+      enum: ["razorpay"],
+      default: undefined,
+    },
+    paymentMode: {
+      type: String,
+      enum: ["test"],
+      default: undefined,
+    },
+    razorpayOrderId: {
+      type: String,
+      trim: true,
+      default: undefined,
+      index: true,
+    },
+    razorpayPaymentId: {
+      type: String,
+      trim: true,
+      default: undefined,
+      index: true,
+    },
+    paymentAttempt: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PaymentAttempt",
+      default: undefined,
+      index: true,
+    },
+    paidAt: {
+      type: Date,
+      default: undefined,
+    },
   },
   {
     timestamps: {

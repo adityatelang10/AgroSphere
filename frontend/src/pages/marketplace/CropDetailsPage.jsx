@@ -137,6 +137,27 @@ export default function CropDetailsPage() {
           </div>
         </div>
 
+        {crop.traceabilityId ? (
+          <section className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/25">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+                  Crop traceability
+                </p>
+                <p className="mt-1 break-all font-mono text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  {crop.traceabilityId}
+                </p>
+              </div>
+              <Link
+                to={`/trace/${crop.traceabilityId}`}
+                className="inline-flex w-fit shrink-0 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500"
+              >
+                View crop passport
+              </Link>
+            </div>
+          </section>
+        ) : null}
+
         <div className="flex flex-wrap gap-3">
           <Link
             to={`/farmer/${crop.farmer?._id}`}

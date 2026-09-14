@@ -2,9 +2,18 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+  classifyRecency,
   evaluateDecision,
+  getEvidencePreview,
+  getIrrigationRecency,
   normalizeCropName,
 } = require("../src/services/decisionEngineService");
+const { evaluateWhatIfComparison } = require("../src/services/whatIfSimulationService");
+const IrrigationRecord = require("../src/models/IrrigationRecord");
+const CropRecommendation = require("../src/models/CropRecommendation");
+const DiseaseScan = require("../src/models/DiseaseScan");
+const MarketAnalysis = require("../src/models/MarketAnalysis");
+const FarmerProfile = require("../src/models/FarmerProfile");
 
 const FIXED_NOW = new Date("2026-08-25T12:00:00.000Z");
 
@@ -143,6 +152,120 @@ const buildInput = (overrides = {}) => ({
 
 const decide = (input, evidence) =>
   evaluateDecision({ input, evidence, now: FIXED_NOW });
+
+const previewIrrigation = async (t, observationDate) => {
+  const record = {
+    _id: "irrigation-1",
+    inputs: { crop: "tomato", growthStage: "mid_season", observationDate },
+    result: {
+      irrigationRequired: true,
+      decisionCode: "irrigate_today",
+      waterStress: "High",
+    },
+    createdAt: FIXED_NOW,
+    engineVersion: "irrigation-v1",
+  };
+  for (const model of [CropRecommendation, DiseaseScan, IrrigationRecord, MarketAnalysis, FarmerProfile]) {
+    t.mock.method(model, "findOne", () => ({
+      sort() { return this; },
+      async lean() { return model === IrrigationRecord ? record : null; },
+    }));
+  }
+  return getEvidencePreview({ farmerId: "synthetic-farmer", selectedCrop: "tomato", now: FIXED_NOW });
+};
+
+for (const [label, observationDate, freshness, ageHours, timestampSource] of [
+  ["current observation", FIXED_NOW, "FRESH", 0, "inputs.observationDate"],
+  ["48-hour observation saved now", "2026-08-23T12:00:00.000Z", "OLDER", 48, "inputs.observationDate"],
+  ["96-hour observation saved now", "2026-08-21T12:00:00.000Z", "STALE", 96, "inputs.observationDate"],
+  ["legacy missing observation", undefined, "FRESH", 0, "createdAt"],
+  ["legacy null observation", null, "FRESH", 0, "createdAt"],
+  ["future observation", "2026-08-26", "STALE", null, "inputs.observationDate"],
+  ["invalid present observation", "", "STALE", null, "inputs.observationDate"],
+]) {
+  test("irrigation freshness: " + label, async (t) => {
+    const { evidence } = await previewIrrigation(t, observationDate);
+    const item = evidence.irrigation;
+    assert.equal(item.createdAt, FIXED_NOW.toISOString());
+    assert.equal(item.freshness, freshness);
+    assert.equal(item.ageHours, ageHours);
+    assert.equal(item.timestampSource, timestampSource);
+    assert.equal(item.usedInScoring, freshness !== "STALE");
+    assert.doesNotThrow(() => JSON.stringify(evidence));
+  });
+}
+
+test("date-only irrigation input and its Mongo Date use UTC midnight across timezones", () => {
+  const originalTz = process.env.TZ;
+  try {
+    for (const timezone of ["UTC", "Asia/Kolkata", "America/Los_Angeles"]) {
+      process.env.TZ = timezone;
+      for (const value of ["2026-08-23", new Date("2026-08-23T00:00:00.000Z")]) {
+        const recency = getIrrigationRecency({ inputs: { observationDate: value }, createdAt: FIXED_NOW }, FIXED_NOW);
+        assert.equal(recency.evidenceAt, "2026-08-23T00:00:00.000Z");
+        assert.equal(recency.ageHours, 60);
+        assert.equal(recency.freshness, "OLDER");
+      }
+    }
+  } finally {
+    if (originalTz === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTz;
+  }
+});
+
+test("configured freshness boundaries remain inclusive and unchanged", () => {
+  for (const [type, freshHours, olderHours] of [
+    ["disease", 24, 168],
+    ["irrigation", 24, 72],
+    ["cropRecommendation", 720, 2160],
+  ]) {
+    for (const [ageMs, expected] of [
+      [freshHours * 3_600_000, "FRESH"],
+      [freshHours * 3_600_000 + 1, "OLDER"],
+      [olderHours * 3_600_000, "OLDER"],
+      [olderHours * 3_600_000 + 1, "STALE"],
+    ]) {
+      assert.equal(classifyRecency(new Date(FIXED_NOW.getTime() - ageMs), type, FIXED_NOW).freshness, expected);
+    }
+  }
+});
+
+test("observation freshness controls irrigation score without changing usable factor arithmetic", async (t) => {
+  for (const [observationDate, expectedScore, status] of [
+    [FIXED_NOW, 100, "SCORED"],
+    ["2026-08-23T12:00:00.000Z", 94, "SCORED"],
+    ["2026-08-21T12:00:00.000Z", null, "INSUFFICIENT_EVIDENCE"],
+  ]) {
+    const { evidence } = await previewIrrigation(t, observationDate);
+    const result = decide(buildInput(), evidence);
+    const candidate = result.candidateActions.find((item) => item.code === "IRRIGATE_NOW");
+    assert.equal(candidate.status, status);
+    assert.equal(candidate.score, expectedScore);
+    if (expectedScore !== null) {
+      assert.equal(result.nextBestAction.code, "IRRIGATE_NOW");
+      assert.equal(candidate.factors.reduce((sum, factor) => sum + factor.effect, 0), expectedScore);
+    } else {
+      assert.notEqual(result.nextBestAction.code, "IRRIGATE_NOW");
+      assert.ok(result.missingData.some((item) => /irrigation.*stale/i.test(item)));
+    }
+  }
+});
+
+test("What-If shared preview excludes stale observations in both comparisons", async (t) => {
+  const { evidence } = await previewIrrigation(t, "2026-08-01");
+  const comparison = evaluateWhatIfComparison({
+    selectedCrop: "tomato",
+    baseContext: buildInput(),
+    scenarioOverrides: { waterAvailability: "unavailable" },
+    evidence,
+    now: FIXED_NOW,
+  });
+  for (const result of [comparison.baseScenario, comparison.simulatedScenario]) {
+    const irrigation = result.candidateActions.find((item) => item.code === "IRRIGATE_NOW");
+    assert.equal(irrigation.status, "INSUFFICIENT_EVIDENCE");
+    assert.equal(irrigation.score, null);
+  }
+});
 
 test("scenario 1: high water stress ranks IRRIGATE_NOW first", () => {
   const result = decide(

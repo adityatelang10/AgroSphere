@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import TraceabilityQrPanel from "../../components/traceability/TraceabilityQrPanel";
 import { useAuth } from "../../context/AuthContext";
-import { listCrops } from "../../services/cropService";
+import { ensureCropTraceability, listCrops } from "../../services/cropService";
 import { formatCurrency } from "../../utils/formatters";
 
 const getStockStatus = (stockQuantity) => {
@@ -39,6 +40,9 @@ export default function FarmerCropsPage() {
   const [crops, setCrops] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedCrop, setSelectedCrop] = useState(null);
+  const [traceabilityError, setTraceabilityError] = useState("");
+  const [preparingCropId, setPreparingCropId] = useState("");
 
   useEffect(() => {
     const loadFarmerCrops = async () => {
@@ -62,6 +66,34 @@ export default function FarmerCropsPage() {
       loadFarmerCrops();
     }
   }, [user?.id]);
+
+  const handleOpenTraceability = async (crop) => {
+    setTraceabilityError("");
+
+    if (crop.traceabilityId) {
+      setSelectedCrop(crop);
+      return;
+    }
+
+    setPreparingCropId(crop._id);
+
+    try {
+      const response = await ensureCropTraceability(crop._id);
+      const updatedCrop = response.crop;
+      setCrops((currentCrops) =>
+        currentCrops.map((currentCrop) =>
+          currentCrop._id === updatedCrop._id ? updatedCrop : currentCrop
+        )
+      );
+      setSelectedCrop(updatedCrop);
+    } catch (requestError) {
+      setTraceabilityError(
+        requestError.message || "The crop traceability record could not be prepared."
+      );
+    } finally {
+      setPreparingCropId("");
+    }
+  };
 
   const stockCounts = crops.reduce(
     (counts, crop) => {
@@ -137,6 +169,12 @@ export default function FarmerCropsPage() {
       {error ? (
         <div className="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
           {error}
+        </div>
+      ) : null}
+
+      {traceabilityError ? (
+        <div className="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+          {traceabilityError}
         </div>
       ) : null}
 
@@ -223,13 +261,21 @@ export default function FarmerCropsPage() {
                     {crop.description}
                   </p>
 
-                  <div className="mt-auto pt-4">
+                  <div className="mt-auto flex flex-wrap gap-2 pt-4">
                     <Link
                       to={`/crop/${crop._id}`}
                       className="inline-flex rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-700 dark:text-slate-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-300"
                     >
                       View details
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenTraceability(crop)}
+                      disabled={preparingCropId === crop._id}
+                      className="inline-flex rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:bg-slate-400 dark:focus-visible:ring-offset-slate-950"
+                    >
+                      {preparingCropId === crop._id ? "Preparing..." : "QR / Trace"}
+                    </button>
                   </div>
                 </div>
               </article>
@@ -237,6 +283,57 @@ export default function FarmerCropsPage() {
           })}
         </section>
       )}
+
+      {selectedCrop ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setSelectedCrop(null);
+            }
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="traceability-dialog-title"
+            className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-[2rem] border border-white/70 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950 sm:p-7"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">
+                  Crop traceability
+                </p>
+                <h2
+                  id="traceability-dialog-title"
+                  className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50"
+                >
+                  {selectedCrop.name}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCrop(null)}
+                aria-label="Close traceability dialog"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+              >
+                ×
+              </button>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Share or print this QR so customers can open the listing's public crop passport.
+            </p>
+            <div className="mt-6 rounded-3xl bg-emerald-50/70 p-4 dark:bg-emerald-950/20 sm:p-5">
+              <TraceabilityQrPanel
+                traceabilityId={selectedCrop.traceabilityId}
+                cropName={selectedCrop.name}
+                compact
+              />
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

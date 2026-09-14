@@ -97,7 +97,7 @@ const EvidenceCard = ({ evidenceKey, item }) => {
             {EVIDENCE_LABELS[evidenceKey]}
           </p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {isMissing ? item?.usageNote || "No record found." : formatDateTime(item.createdAt)}
+            {isMissing ? item?.usageNote || "No record found." : "Saved " + formatDateTime(item.createdAt)}
           </p>
         </div>
         <span className={`rounded-full px-3 py-1 text-[0.68rem] font-semibold ${freshnessClass}`}>
@@ -129,6 +129,10 @@ const EvidenceCard = ({ evidenceKey, item }) => {
           ) : null}
           {evidenceKey === "irrigation" ? (
             <>
+              <p>
+                {item.timestampSource === "createdAt" ? "Legacy evidence time" : "Observation time"}:{" "}
+                {formatDateTime(item.evidenceAt)}
+              </p>
               <p>
                 {item.data.waterStress} water stress · {item.data.recommendedTiming}
               </p>

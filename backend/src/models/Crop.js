@@ -13,6 +13,8 @@ const CROP_UNITS = [
 
 const CROP_SEASONS = ["Kharif", "Rabi", "Zaid", "Year-round"];
 
+const TRACEABILITY_ID_PATTERN = /^AGS-[A-Z0-9]{3}-[A-F0-9]{16}$/;
+
 const cropLocationSchema = new mongoose.Schema(
   {
     district: {
@@ -54,6 +56,15 @@ const cropSchema = new mongoose.Schema(
       ref: "FarmerProfile",
       required: [true, "Farmer profile reference is required"],
       index: true,
+    },
+    traceabilityId: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      unique: true,
+      sparse: true,
+      immutable: true,
+      match: [TRACEABILITY_ID_PATTERN, "Traceability id has an invalid format"],
     },
     name: {
       type: String,
@@ -102,6 +113,10 @@ const cropSchema = new mongoose.Schema(
         message: "Season must be one of the supported Indian crop seasons",
       },
       index: true,
+    },
+    harvestDate: {
+      type: Date,
+      default: null,
     },
     isOrganic: {
       type: Boolean,

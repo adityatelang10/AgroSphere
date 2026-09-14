@@ -180,27 +180,32 @@ class IrrigationAdvisorService:
                 crop_water_requirement - effective_recent - effective_forecast,
             )
             recent_rain_covers_demand = effective_recent >= crop_water_requirement
-            forecast_covers_demand = effective_forecast >= crop_water_requirement
+            # This is climatic replacement, not a root-zone refill calculation.
+            # Use the existing response precision so an irrigation action cannot
+            # advertise a positive requirement while returning 0.00 mm.
+            reportable_shortfall = round(climatic_shortfall, 2)
 
-            if water_stress == "High" and not recent_rain_covers_demand:
-                irrigation_required = True
-                decision_code = "irrigate_today"
-                recommended_timing = "Irrigate today, preferably early morning"
-            elif water_stress in {"High", "Medium"} and (
-                recent_rain_covers_demand or forecast_covers_demand
-            ):
+            # Evaluate the combined recent/forecast credit before any stress
+            # override. The measured stress classification itself is unchanged.
+            if water_stress in {"High", "Medium"} and climatic_shortfall == 0:
                 irrigation_required = False
                 decision_code = "delay_for_rain"
                 recommended_timing = (
+                    "Reassess soil moisture after the reported rainfall before further irrigation"
+                    if recent_rain_covers_demand else
                     "Delay irrigation and reassess soil moisture after rainfall"
                 )
+            elif water_stress == "High" and reportable_shortfall > 0:
+                irrigation_required = True
+                decision_code = "irrigate_today"
+                recommended_timing = "Irrigate today, preferably early morning"
             elif water_stress == "Medium" and payload.days_since_last_irrigation == 0:
                 irrigation_required = False
                 decision_code = "reassess_after_irrigation"
                 recommended_timing = (
                     "Reassess soil moisture tomorrow morning before further irrigation"
                 )
-            elif water_stress == "Medium":
+            elif water_stress == "Medium" and reportable_shortfall > 0:
                 irrigation_required = True
                 decision_code = "irrigate_tomorrow"
                 recommended_timing = "Irrigate tomorrow morning"
@@ -209,7 +214,7 @@ class IrrigationAdvisorService:
                 decision_code = "no_irrigation"
                 recommended_timing = "No irrigation currently required"
 
-            estimated_need = climatic_shortfall if irrigation_required else 0
+            estimated_need = reportable_shortfall if irrigation_required else 0
 
             reasons = [
                 (
@@ -222,34 +227,39 @@ class IrrigationAdvisorService:
                 ),
             ]
 
-            if recent_rain_covers_demand:
+            # Action reasons follow the final decision, not independent stress
+            # and rainfall branches that can contradict one another.
+            if decision_code in {"irrigate_today", "irrigate_tomorrow"}:
+                timing = "today" if decision_code == "irrigate_today" else "tomorrow morning"
                 reasons.append(
-                    "Effective rainfall since the moisture reading can cover the estimated daily crop demand."
+                    f"{water_stress} soil-water stress and a remaining next-24-hour "
+                    f"climatic shortfall of {estimated_need:.2f} mm support irrigation {timing}."
                 )
-            elif forecast_covers_demand:
+            elif decision_code == "reassess_after_irrigation":
                 reasons.append(
-                    "Expected effective rainfall can cover the estimated daily crop demand, so reassessment is safer than immediate irrigation."
+                    "Irrigation was recorded today; allow water to redistribute and reassess soil moisture tomorrow before further irrigation."
                 )
-            elif climatic_shortfall > 0 and irrigation_required:
+            elif decision_code == "delay_for_rain" or climatic_shortfall == 0:
+                if recent_rain_covers_demand:
+                    reasons.append(
+                        "Effective rainfall since the moisture reading can cover the estimated next-24-hour climatic demand; reassess soil moisture before further irrigation."
+                    )
+                else:
+                    reasons.append(
+                        "Forecast effective rainfall, together with any recent rainfall, may cover the estimated next-24-hour climatic demand; reassess soil moisture after rainfall before irrigation."
+                    )
+            elif reportable_shortfall == 0:
                 reasons.append(
-                    f"Rainfall leaves an estimated next-day net water shortfall of {climatic_shortfall:.1f} mm."
-                )
-            elif climatic_shortfall > 0 and water_stress == "Low":
-                reasons.append(
-                    f"Current soil moisture can buffer the estimated {climatic_shortfall:.1f} mm next-day climatic shortfall, so immediate irrigation is not advised."
-                )
-            elif climatic_shortfall > 0:
-                reasons.append(
-                    "A next-day water shortfall remains, but recent irrigation should be allowed to redistribute before another application."
+                    "The calculated climatic shortfall rounds to 0.00 mm at the existing reporting precision; no application depth is recommended. Recheck inputs and soil moisture."
                 )
             else:
                 reasons.append(
-                    "Recent and forecast effective rainfall cover the estimated next-day crop demand."
+                    f"Current soil moisture can buffer the estimated {climatic_shortfall:.1f} mm next-day climatic shortfall, so immediate irrigation is not advised."
                 )
 
             if payload.days_since_last_irrigation == 0:
                 reasons.append(
-                    "Irrigation was recorded today, so another application should wait unless current stress is high."
+                    "The last irrigation was reported today."
                 )
             else:
                 reasons.append(
@@ -288,6 +298,14 @@ class IrrigationAdvisorService:
                 warnings.append(
                     "Heavy rainfall can create runoff or drainage losses that this simple effective-rainfall factor cannot model."
                 )
+            if water_stress == "High" and not irrigation_required:
+                warnings.append(
+                    "High soil-water stress remains despite a zero recommended climatic depth; recheck root-zone moisture promptly and seek local agronomic advice if stress persists."
+                )
+            if payload.forecast_rainfall > 0:
+                warnings.append(
+                    "Forecast rainfall is uncertain; monitor actual rain and soil moisture and reassess promptly if rain is delayed or lower than expected."
+                )
 
             assumptions = [
                 "Reference ETo uses the FAO-documented Hargreaves equation because radiation, wind and full humidity observations are unavailable.",
@@ -295,7 +313,8 @@ class IrrigationAdvisorService:
                 "Soil moisture is treated as a volumetric percentage representative of the active root zone.",
                 "Recent rainfall means rain since the soil-moisture reading; enter zero if moisture was measured after that rain.",
                 "Eighty percent of entered rainfall is treated as effective for planning; actual runoff, evaporation and deep drainage vary by field.",
-                "Estimated irrigation need is a next-24-hour net depth before irrigation-system efficiency and field application losses."
+                "Estimated irrigation need is the next-24-hour climatic shortfall when irrigation is advised, before irrigation-system efficiency and field application losses; it is not a full soil-profile refill depth.",
+                "A zero recommended climatic depth does not establish recovery from soil-water stress; this engine does not calculate an emergency root-zone refill depth."
             ]
 
             return IrrigationPredictionResponse(

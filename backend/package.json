@@ -12,6 +12,10 @@
     "check": "node --check src/index.js",
     "test:decision": "node --test tests/decisionEngineService.test.js",
     "test:dashboard": "node --test tests/intelligenceDashboardService.test.js",
+    "test:copilot": "node --test --test-isolation=none tests/geminiService.test.js",
+    "test:traceability": "node --test tests/traceabilityService.test.js",
+    "test:weather": "node --test tests/weatherService.test.js",
+    "test:payments": "node --test tests/payment*.test.js",
     "test:whatif": "node --test tests/whatIfSimulationService.test.js",
     "test:decision-support": "node --test tests/decisionEngineService.test.js tests/intelligenceDashboardService.test.js tests/whatIfSimulationService.test.js"
   },

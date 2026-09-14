@@ -67,6 +67,31 @@ const classifyRecency = (createdAt, evidenceType, now = new Date()) => {
   };
 };
 
+const getIrrigationRecency = (record, now = new Date()) => {
+  // The form submits YYYY-MM-DD; MongoDB casts it to UTC midnight. Keep that
+  // convention explicit instead of interpreting the calendar date in server time.
+  // Only genuinely absent observation dates may use the legacy creation time.
+  const observationDate = record.inputs?.observationDate;
+  const timestampSource = observationDate == null ? "createdAt" : "inputs.observationDate";
+  const value = observationDate == null ? record.createdAt : observationDate;
+  const parsed = value == null || value === ""
+    ? NaN
+    : new Date(typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+      ? `${value}T00:00:00.000Z`
+      : value).getTime();
+  const valid = Number.isFinite(parsed);
+  const timestampIssue = !valid ? "INVALID" : parsed > now.getTime() ? "FUTURE" : null;
+
+  return {
+    evidenceAt: valid ? new Date(parsed).toISOString() : null,
+    timestampSource,
+    timestampIssue,
+    ...(timestampIssue
+      ? { freshness: "STALE", ageHours: null }
+      : classifyRecency(new Date(parsed), "irrigation", now)),
+  };
+};
+
 const missingEvidence = (sourceType, usageNote) => ({
   status: "MISSING",
   sourceType,
@@ -127,7 +152,7 @@ const loadLatestEvidence = async ({ farmerId, selectedCrop, now = new Date() }) 
     ? classifyRecency(disease.createdAt, "disease", now)
     : null;
   const irrigationRecency = irrigation
-    ? classifyRecency(irrigation.createdAt, "irrigation", now)
+    ? getIrrigationRecency(irrigation, now)
     : null;
   const marketRecordRecency = market
     ? classifyRecency(market.createdAt, "marketRecord", now)
@@ -194,13 +219,20 @@ const loadLatestEvidence = async ({ farmerId, selectedCrop, now = new Date() }) 
           sourceId: String(irrigation._id),
           crop: selectedCrop,
           createdAt: toIsoString(irrigation.createdAt),
+          evidenceAt: irrigationRecency.evidenceAt,
+          timestampSource: irrigationRecency.timestampSource,
+          timestampIssue: irrigationRecency.timestampIssue,
           ageHours: irrigationRecency.ageHours,
           freshness: irrigationRecency.freshness,
           usedInScoring: irrigationRecency.freshness !== "STALE",
           usageNote:
-            irrigationRecency.freshness === "STALE"
+            irrigationRecency.timestampIssue
+              ? "The irrigation observation time is invalid or in the future; this record is displayed but is not used as current irrigation evidence."
+              : irrigationRecency.freshness === "STALE"
               ? "The irrigation advice is stale and is not used for current irrigation urgency."
-              : "Stored irrigation urgency and water-stress fields directly influence growing-crop actions.",
+              : irrigationRecency.timestampSource === "createdAt"
+                ? "Legacy record has no observation date; freshness uses its creation time. Usable irrigation evidence influences growing-crop actions."
+                : "Freshness uses the field observation date (UTC midnight for date-only input). Usable irrigation urgency and water-stress fields influence growing-crop actions.",
           data: {
             growthStage: irrigation.inputs.growthStage,
             irrigationRequired: irrigation.result.irrigationRequired,
@@ -1142,6 +1174,7 @@ const getEvidencePreview = async ({ farmerId, selectedCrop, now = new Date() }) 
 
 module.exports = {
   classifyRecency,
+  getIrrigationRecency,
   evaluateDecision,
   generateDecision,
   getEvidencePreview,

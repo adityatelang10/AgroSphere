@@ -20,17 +20,17 @@ export function useNotifications(userId, { enabled = true } = {}) {
   const socketRef = useRef(null);
 
   useEffect(() => {
+    setNotifications([]);
+    setLastEvent(null);
+    setIsConnected(false);
+
     if (!enabled || !userId) {
-      setIsConnected(false);
       return undefined;
     }
 
     const socket = io(SOCKET_URL, {
       transports: ["websocket"],
       withCredentials: true,
-      query: {
-        userId,
-      },
     });
 
     socketRef.current = socket;
@@ -54,6 +54,7 @@ export function useNotifications(userId, { enabled = true } = {}) {
 
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
+    socket.on("connect_error", handleDisconnect);
     socket.on("orderPlaced", (payload) => pushNotification("orderPlaced", payload));
     socket.on("orderStatusUpdated", (payload) =>
       pushNotification("orderStatusUpdated", payload)
@@ -62,6 +63,7 @@ export function useNotifications(userId, { enabled = true } = {}) {
     return () => {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
+      socket.off("connect_error", handleDisconnect);
       socket.off("orderPlaced");
       socket.off("orderStatusUpdated");
       socket.disconnect();

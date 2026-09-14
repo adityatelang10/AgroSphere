@@ -14,3 +14,9 @@ export function createCrop(cropData) {
     body: cropData,
   });
 }
+
+export function ensureCropTraceability(cropId) {
+  return apiRequest(`/api/crops/${cropId}/traceability`, {
+    method: "POST",
+  });
+}

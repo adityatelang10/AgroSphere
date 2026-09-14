@@ -166,7 +166,7 @@ export default function MarketplacePage() {
                   }
                   className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                 />
-                Organic only
+                Farmer-declared organic only
               </label>
 
               <button

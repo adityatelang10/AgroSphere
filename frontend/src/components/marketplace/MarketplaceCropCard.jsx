@@ -56,6 +56,7 @@ export default function MarketplaceCropCard({ crop, index, userRole, onAddToCart
           {crop.isOrganic ? (
             <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[0.7rem] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
               Organic
+              <span className="block text-[0.6rem] font-medium">Farmer-declared</span>
             </span>
           ) : null}
         </div>

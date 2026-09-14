@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import { getMyOrders } from "../../services/orderService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 
 export default function OrdersPage() {
+  const location = useLocation();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -36,6 +38,12 @@ export default function OrdersPage() {
           Track deliveries and review your recent purchases.
         </h1>
       </section>
+
+      {location.state?.paymentSuccess ? (
+        <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+          Test payment verified. {location.state.orderCount || 1} marketplace order{location.state.orderCount === 1 ? " was" : "s were"} created successfully. No real money was charged.
+        </div>
+      ) : null}
 
       {error ? (
         <div className="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
@@ -73,7 +81,16 @@ export default function OrdersPage() {
                   <div className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                     {order.status}
                   </div>
+
                 </div>
+
+                {order.paymentStatus === "VERIFIED" ? (
+                  <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-sm dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                    <p className="font-semibold text-emerald-800 dark:text-emerald-200">Test payment verified</p>
+                    <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">Razorpay · Test Mode · No real money</p>
+                    {order.razorpayPaymentId ? <p className="mt-1 break-all text-xs text-slate-500 dark:text-slate-400">Reference: {order.razorpayPaymentId}</p> : null}
+                  </div>
+                ) : null}
 
                 <div className="mt-5 grid gap-4 lg:grid-cols-[1fr,18rem]">
                   <div className="space-y-3">

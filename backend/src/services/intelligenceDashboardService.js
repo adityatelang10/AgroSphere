@@ -5,6 +5,7 @@ const FarmerProfile = require("../models/FarmerProfile");
 const Order = require("../models/Order");
 const {
   classifyRecency,
+  getIrrigationRecency,
   getEvidencePreview,
   getSupportedCrops,
   normalizeCropName,
@@ -204,6 +205,8 @@ const mapIrrigation = (item) => ({
   },
   engineVersion: item.data?.engineVersion || null,
   generatedAt: item.createdAt,
+  evidenceAt: item.evidenceAt || null,
+  timestampSource: item.timestampSource || null,
   freshness: item.freshness,
   ageHours: item.ageHours,
   note: item.usageNote,
@@ -306,12 +309,66 @@ const createAlert = (category, code, title, message, source) => ({
   source,
 });
 
+const detectOutdatedSupportingEvidence = ({ decision, evidence, now }) => {
+  const winner = decision?.candidateActions?.find(
+    (candidate) => candidate.code === decision.nextBestAction?.code && candidate.status === "SCORED"
+  );
+  if (!winner || !decision.evidenceSnapshot) {
+    // Legacy snapshots without a factor audit cannot establish contribution.
+    return [];
+  }
+
+  return [
+    ["disease", "DiseaseScan", "disease"],
+    ["irrigation", "IrrigationRecord", "irrigation"],
+  ].flatMap(([key, source, label]) => {
+    const saved = decision.evidenceSnapshot[key];
+    const contributed = winner.factors?.some(
+      (factor) => factor.source === source && Number.isFinite(factor.effect) && factor.effect !== 0
+    );
+    if (!contributed || saved?.status !== "AVAILABLE" || !saved.sourceId ||
+        saved.usedInScoring !== true || !["FRESH", "OLDER"].includes(saved.freshness)) {
+      return [];
+    }
+
+    const current = evidence[key];
+    if (!current || current.status !== "AVAILABLE") {
+      return [`Supporting ${label} evidence is no longer available.`];
+    }
+    // Old snapshots omitted the irrigation observation date. Recover it from
+    // the same source record when available, never from a different record.
+    const sameRecord = String(saved.sourceId) === String(current.sourceId);
+    const item = sameRecord ? current : saved;
+    const recency = key === "irrigation"
+      ? getIrrigationRecency({
+          inputs: Object.hasOwn(item, "evidenceAt")
+            ? { observationDate: item.evidenceAt ?? "" }
+            : {},
+          createdAt: item.createdAt,
+        }, now)
+      : classifyRecency(item.createdAt, "disease", now);
+
+    if (recency.timestampIssue) {
+      return [`Supporting ${label} evidence has an invalid or future observation time.`];
+    }
+    if (recency.freshness === "STALE" || (sameRecord && current.freshness === "STALE")) {
+      return [`Supporting ${label} evidence is stale.`];
+    }
+    if (recency.freshness === "MISSING" ||
+        (sameRecord && (current.usedInScoring === false ||
+          (key === "disease" && current.data?.supportedClass !== true)))) {
+      return [`Supporting ${label} evidence is no longer usable.`];
+    }
+    return [];
+  });
+};
+
 const buildAlerts = ({
   primaryCrop,
   cards,
   decisionAvailable,
   decisionNeedsRefresh,
-  newerEvidence,
+  decisionRefreshReasons,
 }) => {
   const alerts = [];
   const irrigationIsCurrent =
@@ -360,9 +417,9 @@ const buildAlerts = ({
       createAlert(
         "ATTENTION",
         "DECISION_REFRESH",
-        "New evidence is available",
-        `${newerEvidence.map((item) => item.source).join(", ")} changed after the latest decision. Consider regenerating the Next Best Action.`,
-        "Timestamp comparison"
+        "Decision may be outdated",
+        `${decisionRefreshReasons.join(" ")} Regenerate Farm Decision using current evidence.`,
+        "DecisionSnapshot evidence provenance"
       )
     );
   }
@@ -458,13 +515,18 @@ const buildDashboardPayload = ({
     market: mapMarket(evidence.market),
   };
   const newerEvidence = detectNewerEvidence({ decision, evidence });
-  const decisionNeedsRefresh = newerEvidence.length > 0;
+  const outdatedEvidence = detectOutdatedSupportingEvidence({ decision, evidence, now });
+  const decisionRefreshReasons = [
+    ...newerEvidence.map((item) => `${item.source} changed after the latest decision.`),
+    ...outdatedEvidence,
+  ];
+  const decisionNeedsRefresh = decisionRefreshReasons.length > 0;
   const alerts = buildAlerts({
     primaryCrop,
     cards,
     decisionAvailable: Boolean(decision),
     decisionNeedsRefresh,
-    newerEvidence,
+    decisionRefreshReasons,
   });
 
   const nextBestAction = decision
@@ -510,6 +572,7 @@ const buildDashboardPayload = ({
     primaryCrop,
     nextBestAction,
     decisionNeedsRefresh,
+    decisionRefreshReasons,
     newerEvidence,
     cropRecommendation: cards.cropRecommendation,
     disease: cards.disease,
@@ -531,9 +594,11 @@ const buildDashboardPayload = ({
       .map((alert) => alert.message),
     freshness: {
       decision: decision
-        ? decisionNeedsRefresh
-          ? "NEW_EVIDENCE_AVAILABLE"
-          : "LATEST_STORED_DECISION"
+        ? outdatedEvidence.length > 0
+          ? "DECISION_OUTDATED"
+          : newerEvidence.length > 0
+            ? "NEW_EVIDENCE_AVAILABLE"
+            : "LATEST_STORED_DECISION"
         : "MISSING",
       disease: cards.disease.freshness,
       irrigation: cards.irrigation.freshness,

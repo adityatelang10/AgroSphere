@@ -1,8 +1,7 @@
 const express = require("express");
 
 const {
-  checkout,
-  checkoutValidation,
+  checkoutRequiresPayment,
   getFarmerOrders,
   getMyOrders,
   updateOrderStatus,
@@ -16,8 +15,7 @@ router.post(
   "/checkout",
   authMiddleware,
   requireRole("CUSTOMER"),
-  checkoutValidation,
-  checkout
+  checkoutRequiresPayment
 );
 router.get("/my-orders", authMiddleware, requireRole("CUSTOMER"), getMyOrders);
 router.get("/farmer", authMiddleware, requireRole("FARMER"), getFarmerOrders);

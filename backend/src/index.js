@@ -9,6 +9,7 @@ dotenv.config();
 const express = require("express");
 const mongoose = require("mongoose");
 const { Server } = require("socket.io");
+const { configureSocketAuthentication } = require("./middleware/socketAuthMiddleware");
 
 const authRoutes = require("./routes/authRoutes");
 const aiRoutes = require("./routes/aiRoutes");
@@ -16,24 +17,15 @@ const chatRoutes = require("./routes/chatRoutes");
 const cropRoutes = require("./routes/cropRoutes");
 const farmerRoutes = require("./routes/farmerRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const traceabilityRoutes = require("./routes/traceabilityRoutes");
+const weatherRoutes = require("./routes/weatherRoutes");
 
 const app = express();
 const server = http.createServer(app);
 
 const allowedOrigin = process.env.CLIENT_URL || "http://localhost:5173";
-
-const getSocketUserId = (socket) => {
-  const fromAuth = socket.handshake.auth?.userId;
-  const fromQuery = socket.handshake.query?.userId;
-  const userId = fromAuth || fromQuery;
-
-  if (!userId) {
-    return null;
-  }
-
-  return String(userId);
-};
 
 const io = new Server(server, {
   cors: {
@@ -43,6 +35,7 @@ const io = new Server(server, {
   },
 });
 
+configureSocketAuthentication(io);
 app.set("io", io);
 
 app.use(
@@ -61,42 +54,16 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/crops", cropRoutes);
 app.use("/api/farmer", farmerRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/traceability", traceabilityRoutes);
+app.use("/api/weather", weatherRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     success: true,
     message: "AgroSphere backend is running.",
     timestamp: new Date().toISOString(),
-  });
-});
-
-io.on("connection", (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
-
-  const initialUserId = getSocketUserId(socket);
-
-  if (initialUserId) {
-    const roomName = `user:${initialUserId}`;
-    socket.join(roomName);
-    socket.data.userId = initialUserId;
-    console.log(`Socket ${socket.id} joined room ${roomName}`);
-  }
-
-  socket.on("join:user", (userId) => {
-    if (!userId) {
-      return;
-    }
-
-    const normalizedUserId = String(userId);
-    const roomName = `user:${normalizedUserId}`;
-    socket.join(roomName);
-    socket.data.userId = normalizedUserId;
-    console.log(`Socket ${socket.id} joined room ${roomName}`);
-  });
-
-  socket.on("disconnect", () => {
-    console.log(`Socket disconnected: ${socket.id}`);
   });
 });
 

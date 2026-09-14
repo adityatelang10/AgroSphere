@@ -2,8 +2,15 @@ import { useState } from "react";
 
 import ModuleHeader from "../../components/ui/ModuleHeader";
 import ScrollReveal from "../../components/ui/ScrollReveal";
+import IrrigationWeatherAssist from "../../components/weather/IrrigationWeatherAssist";
 import useResultReveal from "../../hooks/useResultReveal";
 import { requestIrrigationAdvice } from "../../services/irrigationService";
+import { readWeatherLocation } from "../../utils/weatherLocation";
+import {
+  WEATHER_ASSISTED_FIELDS,
+  getIrrigationWeatherSources,
+  getIrrigationWeatherUpdates,
+} from "../../utils/irrigationWeatherMapping";
 
 const CROP_OPTIONS = [
   { value: "tomato", label: "Tomato" },
@@ -98,6 +105,15 @@ const initialFormState = {
   daysSinceLastIrrigation: "",
 };
 
+const initialFieldSources = {
+  minimumTemperature: "manual",
+  maximumTemperature: "manual",
+  latitude: "manual",
+  observationDate: "manual",
+  recentRainfall: "manual",
+  forecastRainfall: "manual",
+};
+
 const formatNumber = (value, digits = 2) =>
   new Intl.NumberFormat("en-IN", {
     minimumFractionDigits: 0,
@@ -117,19 +133,69 @@ const getStressClasses = (stress) => {
 };
 
 export default function SmartIrrigationPage() {
-  const [formState, setFormState] = useState(initialFormState);
+  const [formState, setFormState] = useState(() => ({
+    ...initialFormState,
+    latitude: readWeatherLocation()?.latitude ?? "",
+  }));
   const [fieldErrors, setFieldErrors] = useState({});
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldSources, setFieldSources] = useState(() => ({
+    ...initialFieldSources,
+    latitude: readWeatherLocation() ? "saved" : "manual",
+  }));
   const resultRef = useResultReveal(result);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormState((current) => ({ ...current, [name]: value }));
+    if (WEATHER_ASSISTED_FIELDS.has(name)) {
+      setFieldSources((current) => ({ ...current, [name]: "manual" }));
+    }
     setFieldErrors((current) => ({ ...current, [name]: "" }));
     setError("");
     setResult(null);
+  };
+
+  const handleWeatherLoaded = (weather) => {
+    const updates = getIrrigationWeatherUpdates(weather);
+    setFormState((current) => ({ ...current, ...updates }));
+    setFieldSources((current) => getIrrigationWeatherSources(current, updates));
+    setFieldErrors((current) => ({
+      ...current,
+      ...Object.fromEntries(Object.keys(updates).map((field) => [field, ""])),
+    }));
+    setError("");
+    setResult(null);
+  };
+
+  const renderSourceBadge = (fieldName) => {
+    const source = fieldSources[fieldName];
+    if (!source) {
+      return null;
+    }
+
+    const isWeather = source === "weather";
+    const label = isWeather
+      ? "From Open-Meteo"
+      : source === "saved"
+        ? "Saved coordinate"
+        : source === "retained"
+          ? "Retained input · review"
+          : "Manual input";
+
+    return (
+      <span
+        className={`ml-2 inline-flex rounded-full px-2 py-0.5 text-[0.62rem] font-semibold ${
+          isWeather
+            ? "bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200"
+            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+        }`}
+      >
+        {label}
+      </span>
+    );
   };
 
   const validateAndBuildPayload = () => {
@@ -222,6 +288,7 @@ export default function SmartIrrigationPage() {
           {field.label}
         </span>
         <span className="ml-1 text-[0.68rem] text-slate-400">{field.unit}</span>
+        {renderSourceBadge(field.name)}
         <input
           type="number"
           name={field.name}
@@ -251,12 +318,12 @@ export default function SmartIrrigationPage() {
         method="Hargreaves ETo + crop-stage Kc"
         icon="water"
         tone="water"
-        description="Assess crop-water status from manual field observations, rainfall, and a transparent FAO-style calculation."
+        description="Assess crop-water status from editable field observations, optional live weather inputs, and a transparent FAO-style calculation."
       >
         <p className="max-w-4xl text-xs leading-6 text-amber-700 dark:text-amber-300">
-          Enter manual field observations. Humidity is intentionally not requested because
-          the selected Hargreaves ETo equation does not use it; wind, radiation, and
-          automatic weather data are not available in this version.
+          Weather can assist with compatible inputs, but every value remains editable.
+          Humidity and wind are shown only as context because the existing Hargreaves ETo
+          equation does not use them.
         </p>
       </ModuleHeader>
 
@@ -267,6 +334,14 @@ export default function SmartIrrigationPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+            <IrrigationWeatherAssist
+              latitude={formState.latitude}
+              latitudeSource={fieldSources.latitude}
+              disabled={isSubmitting}
+              onLatitudeChange={handleChange}
+              onWeatherLoaded={handleWeatherLoaded}
+            />
+
             <fieldset className="rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 pb-3 pt-2.5 dark:border-emerald-900/50 dark:bg-emerald-950/20">
               <legend className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-200">Crop &amp; soil</legend>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -304,10 +379,9 @@ export default function SmartIrrigationPage() {
 
             <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 pb-3 pt-2.5 dark:border-slate-800 dark:bg-slate-900/60">
               <legend className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 dark:text-slate-200">Field context</legend>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {renderNumericField("latitude")}
+              <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Observation date</span>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Observation date</span>{renderSourceBadge("observationDate")}
                   <input type="date" name="observationDate" value={formState.observationDate} onChange={handleChange} required disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
                   {fieldErrors.observationDate ? <span className="mt-1 block text-xs text-rose-600">{fieldErrors.observationDate}</span> : null}
                 </label>
@@ -317,7 +391,8 @@ export default function SmartIrrigationPage() {
 
             <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
               “Rain since moisture reading” prevents double-counting. If the moisture value
-              was measured after the latest rain, enter 0 for recent rainfall.
+              was measured after the latest rain, enter 0 for recent rainfall. This field is
+              always manual; today’s provider rain total is not substituted for it.
             </p>
 
             {error ? (

@@ -6,6 +6,7 @@ const {
   createCropValidation,
   cropIdValidation,
   deleteCrop,
+  ensureCropTraceability,
   getCropById,
   listCropValidation,
   listCrops,
@@ -42,6 +43,13 @@ router.post(
   upload.array("images", 5),
   createCropValidation,
   createCrop
+);
+router.post(
+  "/:id/traceability",
+  authMiddleware,
+  requireRole("FARMER"),
+  cropIdValidation,
+  ensureCropTraceability
 );
 router.put(
   "/:id",

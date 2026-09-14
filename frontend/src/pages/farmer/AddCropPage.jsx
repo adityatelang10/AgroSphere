@@ -11,6 +11,7 @@ const initialFormState = {
   unit: "kg",
   stockQuantity: "",
   season: "Year-round",
+  harvestDate: "",
   isOrganic: false,
   district: "",
   state: "",
@@ -224,6 +225,20 @@ export default function AddCropPage() {
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Harvest Date <span className="font-normal text-slate-400">(optional)</span>
+            </span>
+            <input
+              name="harvestDate"
+              type="date"
+              value={formState.harvestDate}
+              onChange={handleChange}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            />
+            {fieldErrors.harvestDate && <p className="mt-1 text-sm text-rose-600 dark:text-rose-400">{fieldErrors.harvestDate}</p>}
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
               District
             </span>
             <input
@@ -274,7 +289,10 @@ export default function AddCropPage() {
               className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800"
             />
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-              This crop is certified organic
+              I declare this crop as organic
+              <span className="mt-1 block text-xs font-normal text-slate-500 dark:text-slate-400">
+                Farmer-provided information. AgroSphere does not verify organic certification.
+              </span>
             </span>
           </label>
 
