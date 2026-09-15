@@ -21,6 +21,7 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const traceabilityRoutes = require("./routes/traceabilityRoutes");
 const weatherRoutes = require("./routes/weatherRoutes");
+const mandiPriceRoutes = require("./routes/mandiPriceRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -58,6 +59,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/traceability", traceabilityRoutes);
 app.use("/api/weather", weatherRoutes);
+app.use("/api/market", mandiPriceRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({

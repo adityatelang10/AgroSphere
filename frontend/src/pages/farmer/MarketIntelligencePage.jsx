@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import LatestMandiPricePanel from "../../components/market/LatestMandiPricePanel";
 import ModuleHeader from "../../components/ui/ModuleHeader";
 import ScrollReveal from "../../components/ui/ScrollReveal";
 import useResultReveal from "../../hooks/useResultReveal";
@@ -224,21 +225,20 @@ export default function MarketIntelligencePage() {
     <div className="space-y-6">
       <ModuleHeader
         title="Market Intelligence"
-        category="Historical Statistical Analysis"
-        method="AGMARKNET subset · market-v1"
+        category="Mandi Reports & Historical Analysis"
+        method="AGMARKNET · daily reports / market-v1"
         icon="market"
         tone="market"
-        description="Review a documented historical mandi reference, its recent stored trend, and a manual return calculation."
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-900 dark:bg-amber-500/15 dark:text-amber-200">
-            HISTORICAL DATA · last observation 30 Jun 2021
-          </span>
-          <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">
-            Not a current mandi price · no future forecast
-          </span>
-        </div>
-      </ModuleHeader>
+        description="Explore latest reported Government wholesale mandi prices, with separate historical analysis and a manual return calculator below."
+      />
+
+      <LatestMandiPricePanel />
+
+      <div className="border-t border-slate-200 pt-6 dark:border-slate-800">
+        <h2 className="font-display text-xl font-semibold text-slate-950 dark:text-slate-50">Historical Market Analysis</h2>
+        <p className="mt-2 text-sm font-medium text-amber-800 dark:text-amber-200">Historical dataset through 30 June 2021.</p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">The section below uses the unchanged market-v1 archive, not current mandi reports or a future forecast.</p>
+      </div>
 
       <ScrollReveal as="section" className="mx-auto w-full max-w-7xl rounded-3xl border border-violet-200/80 bg-white/90 p-4 shadow-sm dark:border-violet-950 dark:bg-slate-950/80 sm:p-5">
         <div className="flex flex-wrap items-end justify-between gap-3">

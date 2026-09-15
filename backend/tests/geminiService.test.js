@@ -68,7 +68,11 @@ test("current capability context covers the final AgroSphere feature set", () =>
 });
 
 test("system context states critical data and payment limitations", () => {
-  assert.match(AGROSPHERE_COPILOT_SYSTEM_INSTRUCTION, /no live mandi-price feed/i);
+  assert.match(AGROSPHERE_COPILOT_SYSTEM_INSTRUCTION, /when configured.*latest reported daily wholesale mandi prices/i);
+  assert.match(AGROSPHERE_COPILOT_SYSTEM_INSTRUCTION, /not second-by-second live prices or forecasts/i);
+  assert.match(AGROSPHERE_COPILOT_SYSTEM_INSTRUCTION, /separate historical module/i);
+  assert.match(AGROSPHERE_COPILOT_SYSTEM_INSTRUCTION, /no future price-forecasting model/i);
+  assert.match(AGROSPHERE_COPILOT_SYSTEM_INSTRUCTION, /not guaranteed farmer sale prices/i);
   assert.match(AGROSPHERE_COPILOT_SYSTEM_INSTRUCTION, /No real money moves/i);
   assert.match(AGROSPHERE_COPILOT_SYSTEM_INSTRUCTION, /Farmer settlement/i);
   assert.match(AGROSPHERE_COPILOT_SYSTEM_INSTRUCTION, /Gemini is not crop-v1/i);
