@@ -31,8 +31,10 @@ python -m training.prepare_disease_dataset
 - PlantVillage images were captured mainly against simple, controlled backgrounds; field
   photos can differ significantly.
 - Only the 15 documented Bell Pepper, Potato, and Tomato classes are supported.
-- An unsupported plant or condition will still be forced into one of the known classes;
-  this is closed-set classification, not universal disease recognition.
+- The classifier remains closed-set. The separate `disease-ood-v1.1` feature-space guard
+  rejects sufficiently dissimilar images before classification; unsupported plants or
+  conditions that pass the guard can still be assigned a known class. See
+  `../../DISEASE_OOD.md` for measured false accepts and false rejections.
 - Multiple conditions can produce visually similar symptoms, and image quality affects
   the result.
 - Model confidence is not laboratory confirmation or guaranteed correctness.

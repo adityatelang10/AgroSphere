@@ -39,6 +39,7 @@ async def lifespan(_: FastAPI):
             model_path=settings.disease_model_path,
             classes_path=settings.disease_classes_path,
             metadata_path=settings.disease_model_metadata_path,
+            ood_path=settings.disease_ood_path,
         )
     except DiseaseModelUnavailableError as error:
         logger.error("Disease detection model is unavailable at startup: %s", error)

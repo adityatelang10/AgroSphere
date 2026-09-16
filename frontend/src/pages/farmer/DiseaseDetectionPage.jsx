@@ -146,8 +146,8 @@ export default function DiseaseDetectionPage() {
       >
         <p className="max-w-4xl text-xs leading-6 text-amber-700 dark:text-amber-300">
           This model currently supports selected Bell Pepper, Potato, and Tomato leaf
-          conditions only. Unsupported plants or symptoms can still be misclassified as a
-          known class.
+          conditions only. A feature-space guard rejects sufficiently dissimilar images;
+          unsupported plants or symptoms can still pass it and be misclassified.
         </p>
       </ModuleHeader>
 
@@ -172,6 +172,9 @@ export default function DiseaseDetectionPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3 p-4 sm:p-5">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Supported: Bell Pepper, Potato and Tomato leaf photos. Upload one clear leaf image.
+            </p>
             <input
               ref={fileInputRef}
               id="leaf-image"
@@ -260,7 +263,19 @@ export default function DiseaseDetectionPage() {
           </form>
       </ScrollReveal>
 
-      {result ? (
+      {result?.status === "UNSUPPORTED_IMAGE" ? (
+        <section ref={resultRef} role="status" className="mx-auto w-full max-w-5xl scroll-mt-24 rounded-3xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900 dark:bg-amber-950/20 sm:p-6">
+          <h2 className="font-display text-xl font-semibold text-slate-950 dark:text-slate-50">
+            Unable to analyze this image
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-slate-700 dark:text-slate-300">{result.message}</p>
+          <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
+            No diagnosis was saved. Supported: Bell Pepper, Potato and Tomato leaf photos.
+          </p>
+        </section>
+      ) : null}
+
+      {result?.status === "CLASSIFIED" ? (
         <div ref={resultRef} className="scroll-mt-24 border-t border-slate-200 pt-6 dark:border-slate-800">
           <ScrollReveal
             as="section"

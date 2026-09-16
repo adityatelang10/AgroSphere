@@ -8,6 +8,7 @@ from torch import nn
 from torchvision import models, transforms
 
 from app.schemas.disease_detection import DiseasePredictionResponse
+from app.services.disease_ood import DiseaseOODGuard, GUARD_VERSION, extract_embedding
 
 SERVICE_ROOT = Path(__file__).resolve().parents[2]
 MAX_IMAGE_PIXELS = 25_000_000
@@ -37,9 +38,13 @@ class DiseaseModelService:
         self._classes = None
         self._metadata = None
         self._transform = None
+        self._guard = None
         self._load_error = None
 
-    def load(self, model_path: Path, classes_path: Path, metadata_path: Path) -> None:
+    def load(
+        self, model_path: Path, classes_path: Path, metadata_path: Path,
+        ood_path: Path = Path("model_artifacts/disease_ood_metadata.npz"),
+    ) -> None:
         resolved_model_path = resolve_service_path(model_path)
         resolved_classes_path = resolve_service_path(classes_path)
         resolved_metadata_path = resolve_service_path(metadata_path)
@@ -96,6 +101,9 @@ class DiseaseModelService:
             )
             model.load_state_dict(artifact["stateDict"], strict=True)
             model.eval()
+            self._guard = DiseaseOODGuard.load(
+                resolve_service_path(ood_path), resolved_model_path, class_labels, preprocessing,
+            )
             self._transform = transforms.Compose(
                 [
                     transforms.Resize(preprocessing["evaluationResize"]),
@@ -116,6 +124,7 @@ class DiseaseModelService:
             self._classes = None
             self._metadata = None
             self._transform = None
+            self._guard = None
             self._load_error = error
             raise DiseaseModelUnavailableError(str(error)) from error
 
@@ -149,6 +158,7 @@ class DiseaseModelService:
             or self._classes is None
             or self._metadata is None
             or self._transform is None
+            or self._guard is None
         ):
             detail = str(self._load_error) if self._load_error else "Model has not been loaded."
             raise DiseaseModelUnavailableError(detail)
@@ -157,17 +167,28 @@ class DiseaseModelService:
 
         try:
             image_tensor = self._transform(image).unsqueeze(0)
+            supported_crops = list(dict.fromkeys(item["crop"] for item in self._classes))
             with torch.inference_mode():
-                logits = self._model(image_tensor)
+                embedding = extract_embedding(self._model, image_tensor)
+                # The auxiliary score is internal only: rejected responses still have no diagnosis.
+                logits = self._model.classifier(embedding)
                 probabilities = torch.softmax(logits, dim=1)[0]
                 confidence_tensor, class_index_tensor = torch.max(probabilities, dim=0)
+                if not self._guard.accepts(embedding, float(confidence_tensor.item())):
+                    return DiseasePredictionResponse(
+                        status="UNSUPPORTED_IMAGE",
+                        model_version=self._metadata["modelVersion"], guard_version=GUARD_VERSION,
+                        predicted_class=None, crop=None, condition=None, is_healthy=None,
+                        confidence=None, supported_class=False,
+                        supported_class_count=len(self._classes), supported_crops=supported_crops,
+                        guidance=None,
+                        message="This image does not appear sufficiently similar to the supported "
+                        "Bell Pepper, Potato, or Tomato leaf images. Upload one clear leaf image.",
+                    )
 
             class_index = int(class_index_tensor.item())
             confidence = float(confidence_tensor.item())
             class_details = self._classes[class_index]
-            supported_crops = list(
-                dict.fromkeys(item["crop"] for item in self._classes)
-            )
             guidance = (
                 "No supported disease condition was selected. Continue monitoring the leaf "
                 "and compare any changing symptoms with local agricultural guidance."
@@ -176,8 +197,9 @@ class DiseaseModelService:
                 "local agricultural expert before treatment."
             )
             return DiseasePredictionResponse(
-                status="ok",
+                status="CLASSIFIED",
                 model_version=self._metadata["modelVersion"],
+                guard_version=GUARD_VERSION,
                 predicted_class=class_details["label"],
                 crop=class_details["crop"],
                 condition=class_details["condition"],

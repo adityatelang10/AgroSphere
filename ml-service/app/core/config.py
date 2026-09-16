@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     crop_model_metadata_path: Path = Path("model_artifacts/crop_model_metadata.json")
     disease_model_path: Path = Path("model_artifacts/disease_model.pt")
     disease_classes_path: Path = Path("model_artifacts/disease_classes.json")
+    disease_ood_path: Path = Path("model_artifacts/disease_ood_metadata.npz")
     disease_model_metadata_path: Path = Path(
         "model_artifacts/disease_model_metadata.json"
     )

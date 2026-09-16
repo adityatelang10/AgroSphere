@@ -1,0 +1,500 @@
+{
+  "evaluatedAt": "2026-09-16T08:24:51.935242+00:00",
+  "modelSha256": "7309566b0e13fc4abc83c15462cb5421119ca39a89281f5807b9b15e3955a841",
+  "guardSha256": "40fae7fb64c0139a56872a14d8c4db7a266e498880233360c6584db8d0ca2975",
+  "thresholdFrozenBeforeEvaluation": 0.3195909709599357,
+  "calibration": {
+    "guardVersion": "disease-ood-v1.1",
+    "classifierVersion": "disease-v1",
+    "modelSha256": "7309566b0e13fc4abc83c15462cb5421119ca39a89281f5807b9b15e3955a841",
+    "classLabels": [
+      "Pepper,_bell___Bacterial_spot",
+      "Pepper,_bell___healthy",
+      "Potato___Early_blight",
+      "Potato___Late_blight",
+      "Potato___healthy",
+      "Tomato___Bacterial_spot",
+      "Tomato___Early_blight",
+      "Tomato___Late_blight",
+      "Tomato___Leaf_Mold",
+      "Tomato___Septoria_leaf_spot",
+      "Tomato___Spider_mites Two-spotted_spider_mite",
+      "Tomato___Target_Spot",
+      "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+      "Tomato___Tomato_mosaic_virus",
+      "Tomato___healthy"
+    ],
+    "featureLayer": "features -> adaptive_avg_pool2d(1,1) -> flatten (1280)",
+    "metric": "nearest_class_centroid_cosine",
+    "normalization": "L2-normalize each embedding; mean by training class; L2-normalize centroids",
+    "preprocessing": {
+      "inputWidth": 160,
+      "inputHeight": 160,
+      "channels": "RGB",
+      "evaluationResize": 176,
+      "evaluationCrop": "center",
+      "normalizationMean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "normalizationStd": [
+        0.229,
+        0.224,
+        0.225
+      ],
+      "method": "ImageNet normalization after RGB conversion, resize, and center crop"
+    },
+    "threshold": 0.3195909709599357,
+    "rule": "distance_or_gated_low_confidence",
+    "secondaryDistanceThreshold": 0.30602748224511367,
+    "confidenceThreshold": 0.9119687676429749,
+    "acceptRule": "distance <= threshold AND (distance <= secondaryDistanceThreshold OR confidence >= confidenceThreshold)",
+    "calibratedAt": "2026-09-16T08:22:36.740448+00:00",
+    "manifestSha256": "f59926c4c5702670fe3d547859fc84702f162ca1a1a8a8af24691b5049e3c1c3",
+    "seed": 42,
+    "targetValidationRetention": 0.98,
+    "baseTargetValidationRetention": 0.99,
+    "quantileMethod": "higher",
+    "auxiliaryCalibration": {
+      "name": "cosine+confidence@p97",
+      "distanceThreshold": 0.3195909709599357,
+      "distanceGateQuantile": 0.97,
+      "secondaryDistanceThreshold": 0.30602748224511367,
+      "auxiliarySignal": "confidence",
+      "auxiliaryThreshold": 0.9119687676429749,
+      "auxiliaryRejectOperator": "<",
+      "validationOnlyCalibration": true,
+      "allowedAdditionalValidationRejections": 4,
+      "gatedValidationSamples": 6
+    },
+    "selectionProvenance": "Compared confidence/margin/entropy at validation p90/p95/p97 distance gates. Selected confidence@p97: tied 7/8 OOD, 289/300 test; 294/300 validation. Same small OOD/test sets reused: exploratory, not independent generalization evidence.",
+    "trainingImages": 1500,
+    "validationImages": 300,
+    "testImagesUsedForCalibration": 0,
+    "trainingEmbeddingNorms": {
+      "min": 19.06984519958496,
+      "median": 28.347843170166016,
+      "p95": 34.1187744140625,
+      "p97": 35.087074279785156,
+      "p99": 37.30759048461914,
+      "max": 44.925785064697266
+    },
+    "validationEmbeddingNorms": {
+      "min": 20.549787521362305,
+      "median": 27.90088653564453,
+      "p95": 34.286746978759766,
+      "p97": 34.6401481628418,
+      "p99": 35.72831726074219,
+      "max": 36.6324462890625
+    },
+    "trainingDistances": {
+      "min": 0.10965453862693009,
+      "median": 0.2188481254976889,
+      "p95": 0.29018035531668246,
+      "p97": 0.3030705223136388,
+      "p99": 0.3148419490402262,
+      "max": 0.38366251532019857
+    },
+    "validationDistances": {
+      "min": 0.11671360703714473,
+      "median": 0.22675039742916747,
+      "p95": 0.2953506270965604,
+      "p97": 0.3060011375219682,
+      "p99": 0.31270457421942943,
+      "max": 0.3378964588969542
+    },
+    "baseValidationAccepted": 298,
+    "validationAccepted": 294,
+    "validationAcceptanceRate": 0.98,
+    "candidateRetention": [
+      {
+        "quantile": 0.95,
+        "threshold": 0.29638474955002425,
+        "accepted": 286
+      },
+      {
+        "quantile": 0.97,
+        "threshold": 0.30602748224511367,
+        "accepted": 292
+      },
+      {
+        "quantile": 0.99,
+        "threshold": 0.3195909709599357,
+        "accepted": 298
+      }
+    ],
+    "normalizedEuclideanEquivalenceMaxError": 5.551115123125783e-16
+  },
+  "knownTest": {
+    "total": 300,
+    "originalCorrect": 268,
+    "originalAccuracy": 0.8933333333333333,
+    "accepted": 289,
+    "acceptanceRate": 0.9633333333333334,
+    "acceptedCorrect": 262,
+    "acceptedAccuracy": 0.9065743944636678,
+    "falseRejections": 11,
+    "rejectedExamples": [
+      {
+        "path": "test/Pepper,_bell___Bacterial_spot/a47d3b9e-eda3-4de2-b8a9-f5505e28d309___JR_B.Spot 3118.JPG",
+        "actualClass": "Pepper,_bell___Bacterial_spot",
+        "predictedClass": "Pepper,_bell___Bacterial_spot",
+        "confidence": 0.6662324666976929,
+        "distance": 0.3519151749814291,
+        "accepted": false
+      },
+      {
+        "path": "test/Pepper,_bell___healthy/42f083e2-272d-4f83-ad9a-573ee90e50ec___Screen Shot 2015-05-06 at 4.01.13 PM.png",
+        "actualClass": "Pepper,_bell___healthy",
+        "predictedClass": "Tomato___Early_blight",
+        "confidence": 0.6175000667572021,
+        "distance": 0.3995476147194902,
+        "accepted": false
+      },
+      {
+        "path": "test/Pepper,_bell___healthy/594d63cf-a655-4d53-a5e4-d38857d91a67___JR_HL 7853.JPG",
+        "actualClass": "Pepper,_bell___healthy",
+        "predictedClass": "Pepper,_bell___healthy",
+        "confidence": 0.8633642792701721,
+        "distance": 0.33351751093973436,
+        "accepted": false
+      },
+      {
+        "path": "test/Tomato___Early_blight/468dba17-366a-422f-b3b6-061261942b0d___RS_Erly.B 7853.JPG",
+        "actualClass": "Tomato___Early_blight",
+        "predictedClass": "Potato___Late_blight",
+        "confidence": 0.6835449934005737,
+        "distance": 0.3221393176088674,
+        "accepted": false
+      },
+      {
+        "path": "test/Tomato___Late_blight/87815762-3104-4c15-96c5-238ecda66998___GHLB2 Leaf 124.2.JPG",
+        "actualClass": "Tomato___Late_blight",
+        "predictedClass": "Tomato___Late_blight",
+        "confidence": 0.7704970836639404,
+        "distance": 0.3224031602059265,
+        "accepted": false
+      },
+      {
+        "path": "test/Tomato___Late_blight/979c7630-3f70-4b8e-80eb-cbcc479e8220___RS_Late.B 5019.JPG",
+        "actualClass": "Tomato___Late_blight",
+        "predictedClass": "Tomato___Early_blight",
+        "confidence": 0.20465701818466187,
+        "distance": 0.35623870510417655,
+        "accepted": false
+      },
+      {
+        "path": "test/Tomato___Leaf_Mold/2715ba21-6d2a-485a-bd10-ea6e8177250d___Crnl_L.Mold 6863.JPG",
+        "actualClass": "Tomato___Leaf_Mold",
+        "predictedClass": "Tomato___Leaf_Mold",
+        "confidence": 0.40859729051589966,
+        "distance": 0.3179811460263151,
+        "accepted": false
+      },
+      {
+        "path": "test/Tomato___Septoria_leaf_spot/8aad671a-ce18-4cdb-9744-63eb859d40b7___Matt.S_CG 7650.JPG",
+        "actualClass": "Tomato___Septoria_leaf_spot",
+        "predictedClass": "Tomato___Septoria_leaf_spot",
+        "confidence": 0.5316827297210693,
+        "distance": 0.31391365276152905,
+        "accepted": false
+      },
+      {
+        "path": "test/Tomato___Septoria_leaf_spot/c4ffa72c-748c-4697-9034-75abe541f5c7___JR_Sept.L.S 2472.JPG",
+        "actualClass": "Tomato___Septoria_leaf_spot",
+        "predictedClass": "Tomato___Leaf_Mold",
+        "confidence": 0.3920770287513733,
+        "distance": 0.31768745585155345,
+        "accepted": false
+      },
+      {
+        "path": "test/Tomato___Septoria_leaf_spot/d1dfc5c2-9605-419b-826f-58691f793758___JR_Sept.L.S 2674.JPG",
+        "actualClass": "Tomato___Septoria_leaf_spot",
+        "predictedClass": "Tomato___Late_blight",
+        "confidence": 0.30714666843414307,
+        "distance": 0.3133327543698381,
+        "accepted": false
+      },
+      {
+        "path": "test/Tomato___Spider_mites Two-spotted_spider_mite/edfb0fe5-a10c-469d-9346-802e68dfcd58___Com.G_SpM_FL 9390.JPG",
+        "actualClass": "Tomato___Spider_mites Two-spotted_spider_mite",
+        "predictedClass": "Tomato___Spider_mites Two-spotted_spider_mite",
+        "confidence": 0.8360425233840942,
+        "distance": 0.321524236778865,
+        "accepted": false
+      }
+    ],
+    "perClass": [
+      {
+        "label": "Pepper,_bell___Bacterial_spot",
+        "total": 20,
+        "accepted": 19,
+        "originalCorrect": 20
+      },
+      {
+        "label": "Pepper,_bell___healthy",
+        "total": 20,
+        "accepted": 18,
+        "originalCorrect": 19
+      },
+      {
+        "label": "Potato___Early_blight",
+        "total": 20,
+        "accepted": 20,
+        "originalCorrect": 19
+      },
+      {
+        "label": "Potato___Late_blight",
+        "total": 20,
+        "accepted": 20,
+        "originalCorrect": 18
+      },
+      {
+        "label": "Potato___healthy",
+        "total": 20,
+        "accepted": 20,
+        "originalCorrect": 19
+      },
+      {
+        "label": "Tomato___Bacterial_spot",
+        "total": 20,
+        "accepted": 20,
+        "originalCorrect": 19
+      },
+      {
+        "label": "Tomato___Early_blight",
+        "total": 20,
+        "accepted": 19,
+        "originalCorrect": 13
+      },
+      {
+        "label": "Tomato___Late_blight",
+        "total": 20,
+        "accepted": 18,
+        "originalCorrect": 15
+      },
+      {
+        "label": "Tomato___Leaf_Mold",
+        "total": 20,
+        "accepted": 19,
+        "originalCorrect": 18
+      },
+      {
+        "label": "Tomato___Septoria_leaf_spot",
+        "total": 20,
+        "accepted": 17,
+        "originalCorrect": 18
+      },
+      {
+        "label": "Tomato___Spider_mites Two-spotted_spider_mite",
+        "total": 20,
+        "accepted": 19,
+        "originalCorrect": 17
+      },
+      {
+        "label": "Tomato___Target_Spot",
+        "total": 20,
+        "accepted": 20,
+        "originalCorrect": 15
+      },
+      {
+        "label": "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+        "total": 20,
+        "accepted": 20,
+        "originalCorrect": 19
+      },
+      {
+        "label": "Tomato___Tomato_mosaic_virus",
+        "total": 20,
+        "accepted": 20,
+        "originalCorrect": 20
+      },
+      {
+        "label": "Tomato___healthy",
+        "total": 20,
+        "accepted": 20,
+        "originalCorrect": 19
+      }
+    ]
+  },
+  "demoSamples": {
+    "moderateEarlyBlight": {
+      "path": "test/Tomato___Early_blight/12c1c25b-6809-45d8-9a20-969de7860b5d___RS_Erly.B 6372.JPG",
+      "actualClass": "Tomato___Early_blight",
+      "predictedClass": "Tomato___Early_blight",
+      "confidence": 0.5946187376976013,
+      "distance": 0.2588260139376468,
+      "accepted": true
+    },
+    "healthyTomato": {
+      "path": "test/Tomato___healthy/1ae5cf7c-f03a-4591-93e9-61d9784763e0___RS_HL 0043.JPG",
+      "actualClass": "Tomato___healthy",
+      "predictedClass": "Tomato___healthy",
+      "confidence": 0.9325215816497803,
+      "distance": 0.21824383290872085,
+      "accepted": true
+    },
+    "potato": {
+      "path": "test/Potato___Early_blight/0898bffc-57aa-4fdb-92d1-fd6a03d2a011___RS_Early.B 6946.JPG",
+      "actualClass": "Potato___Early_blight",
+      "predictedClass": "Potato___Early_blight",
+      "confidence": 0.9929565191268921,
+      "distance": 0.20586860296616305,
+      "accepted": true
+    },
+    "pepper": {
+      "path": "test/Pepper,_bell___Bacterial_spot/0719e8e8-c1ae-4d5a-b29c-dbadc36d13f3___NREC_B.Spot 1947.JPG",
+      "actualClass": "Pepper,_bell___Bacterial_spot",
+      "predictedClass": "Pepper,_bell___Bacterial_spot",
+      "confidence": 0.7010975480079651,
+      "distance": 0.257292640748928,
+      "accepted": true
+    }
+  },
+  "ood": {
+    "total": 8,
+    "rejected": 7,
+    "incorrectlyAccepted": 1,
+    "rejectionRate": 0.875,
+    "samples": [
+      {
+        "file": "coffee.png",
+        "category": "coffee cup / container",
+        "license": "CC0; Rachel Michetti",
+        "licenseSource": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/_fetchers.py",
+        "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/coffee.png",
+        "sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+        "distance": 0.38336210969482265,
+        "accepted": false,
+        "unguardedClass": "Tomato___Late_blight",
+        "unguardedConfidence": 0.4637914001941681,
+        "guardedStatus": "UNSUPPORTED_IMAGE"
+      },
+      {
+        "file": "brick.png",
+        "category": "brick wall texture",
+        "license": "CC0; CC0Textures",
+        "licenseSource": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/_fetchers.py",
+        "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/brick.png",
+        "sha256": "7966caf324f6ba843118d98f7a07746d22f6a343430add0233eca5f6eaaa8fcf",
+        "distance": 0.5027343305816553,
+        "accepted": false,
+        "unguardedClass": "Tomato___healthy",
+        "unguardedConfidence": 0.5245619416236877,
+        "guardedStatus": "UNSUPPORTED_IMAGE"
+      },
+      {
+        "file": "text.png",
+        "category": "printed document",
+        "license": "Public domain; Wikipedia Corner.png",
+        "licenseSource": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/_fetchers.py",
+        "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/text.png",
+        "sha256": "bd84aa3a6e3c9887850d45d606c96b2e59433fbef50338570b63c319e668e6d1",
+        "distance": 0.46120395619043386,
+        "accepted": false,
+        "unguardedClass": "Potato___Late_blight",
+        "unguardedConfidence": 0.4336419701576233,
+        "guardedStatus": "UNSUPPORTED_IMAGE"
+      },
+      {
+        "file": "rocket.jpg",
+        "category": "rocket / sky",
+        "license": "Public domain; SpaceX",
+        "licenseSource": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/_fetchers.py",
+        "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/rocket.jpg",
+        "sha256": "c2dd0de7c538df8d111e479619b129464d0269d0ae5fd18ca91d33a7fdfea95c",
+        "distance": 0.3072774625616925,
+        "accepted": false,
+        "unguardedClass": "Tomato___Late_blight",
+        "unguardedConfidence": 0.8693427443504333,
+        "guardedStatus": "UNSUPPORTED_IMAGE"
+      },
+      {
+        "file": "chelsea.png",
+        "category": "cat",
+        "license": "CC0; Stefan van der Walt",
+        "licenseSource": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/_fetchers.py",
+        "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/chelsea.png",
+        "sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+        "distance": 0.38381501142835006,
+        "accepted": false,
+        "unguardedClass": "Tomato___Late_blight",
+        "unguardedConfidence": 0.6298848390579224,
+        "guardedStatus": "UNSUPPORTED_IMAGE"
+      },
+      {
+        "file": "hubble_deep_field.jpg",
+        "category": "space / stars",
+        "license": "Public domain; NASA",
+        "licenseSource": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/_fetchers.py",
+        "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/hubble_deep_field.jpg",
+        "sha256": "3a19c5dd8a927a9334bb1229a6d63711b1c0c767fb27e2286e7c84a3e2c2f5f4",
+        "distance": 0.4744804714716595,
+        "accepted": false,
+        "unguardedClass": "Tomato___healthy",
+        "unguardedConfidence": 0.7062467932701111,
+        "guardedStatus": "UNSUPPORTED_IMAGE"
+      },
+      {
+        "file": "china.jpg",
+        "category": "building",
+        "license": "CC BY 2.0; see installed sklearn/datasets/images/README.txt",
+        "source": "scikit-learn bundled sample images",
+        "sha256": "8378025ad2519d649d02e32bd98990db4ab572357d9f09841c2fbfbb4fefad29",
+        "distance": 0.27311806533550065,
+        "accepted": true,
+        "unguardedClass": "Tomato___Late_blight",
+        "unguardedConfidence": 0.8150678277015686,
+        "guardedStatus": "CLASSIFIED"
+      },
+      {
+        "file": "flower.jpg",
+        "category": "unsupported flower",
+        "license": "CC BY 2.0; see installed sklearn/datasets/images/README.txt",
+        "source": "scikit-learn bundled sample images",
+        "sha256": "a77f6ec41e353afdf8bdff2ea981b2955535d8d83294f8cfa49cf4e423dd5638",
+        "distance": 0.34205768122446045,
+        "accepted": false,
+        "unguardedClass": "Pepper,_bell___healthy",
+        "unguardedConfidence": 0.32322776317596436,
+        "guardedStatus": "UNSUPPORTED_IMAGE"
+      }
+    ]
+  },
+  "syntheticSupplement": [
+    {
+      "name": "solid_black",
+      "distance": 0.371109355386654,
+      "accepted": false,
+      "unguardedClass": "Tomato___Late_blight",
+      "unguardedConfidence": 0.5189855694770813,
+      "guardedStatus": "UNSUPPORTED_IMAGE"
+    },
+    {
+      "name": "solid_white",
+      "distance": 0.41269117062203486,
+      "accepted": false,
+      "unguardedClass": "Tomato___Late_blight",
+      "unguardedConfidence": 0.6313213109970093,
+      "guardedStatus": "UNSUPPORTED_IMAGE"
+    },
+    {
+      "name": "solid_green",
+      "distance": 0.3888036709929562,
+      "accepted": false,
+      "unguardedClass": "Tomato___Late_blight",
+      "unguardedConfidence": 0.34135210514068604,
+      "guardedStatus": "UNSUPPORTED_IMAGE"
+    },
+    {
+      "name": "noise_seed_42",
+      "distance": 0.43942781254550933,
+      "accepted": false,
+      "unguardedClass": "Tomato___healthy",
+      "unguardedConfidence": 0.8136749267578125,
+      "guardedStatus": "UNSUPPORTED_IMAGE"
+    }
+  ],
+  "limitations": "Small convenience sample, not a representative OOD benchmark. Numeric thresholds are validation-only; rule-family selection reused these test/OOD sets and is exploratory. No universal rejection guarantee."
+}

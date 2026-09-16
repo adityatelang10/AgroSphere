@@ -66,6 +66,10 @@ const createDiseaseDetection = async (req, res, next) => {
       filename: originalFileName,
       mimeType: detectedMimeType,
     });
+    // Rejections are not diagnoses and must never enter Decision Engine evidence.
+    if (prediction.status === "UNSUPPORTED_IMAGE") {
+      return res.status(200).json({ success: true, ...prediction });
+    }
     const scan = await DiseaseScan.create({
       farmer: req.user._id,
       originalFileName,

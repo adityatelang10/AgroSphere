@@ -153,20 +153,31 @@ const getDiseaseDetection = async ({ buffer, filename, mimeType }) => {
       rawBody: formData,
     });
 
-    if (
-      prediction?.status !== "ok" ||
-      typeof prediction?.modelVersion !== "string" ||
-      typeof prediction?.predictedClass !== "string" ||
-      typeof prediction?.crop !== "string" ||
-      typeof prediction?.condition !== "string" ||
-      typeof prediction?.isHealthy !== "boolean" ||
-      typeof prediction?.confidence !== "number" ||
-      prediction.confidence < 0 ||
-      prediction.confidence > 1 ||
-      typeof prediction?.supportedClass !== "boolean" ||
-      !Array.isArray(prediction?.supportedCrops) ||
-      typeof prediction?.guidance !== "string"
-    ) {
+    const validScope =
+      prediction?.modelVersion === "disease-v1" &&
+      prediction?.guardVersion === "disease-ood-v1.1" &&
+      prediction?.supportedClassCount === 15 &&
+      Array.isArray(prediction?.supportedCrops) &&
+      prediction.supportedCrops.length === 3 &&
+      ["Bell Pepper", "Potato", "Tomato"].every((crop) => prediction.supportedCrops.includes(crop));
+    const validClassification =
+      prediction?.status === "CLASSIFIED" &&
+      ["predictedClass", "crop", "condition", "guidance"].every(
+        (field) => typeof prediction?.[field] === "string" && prediction[field].trim().length > 0
+      ) &&
+      typeof prediction?.isHealthy === "boolean" &&
+      Number.isFinite(prediction?.confidence) &&
+      prediction.confidence >= 0 && prediction.confidence <= 1 &&
+      prediction?.supportedClass === true;
+    const validRejection =
+      prediction?.status === "UNSUPPORTED_IMAGE" &&
+      ["predictedClass", "crop", "condition", "isHealthy", "confidence", "guidance"].every(
+        (field) => prediction?.[field] === null
+      ) &&
+      prediction?.supportedClass === false &&
+      typeof prediction?.message === "string" && prediction.message.trim().length > 0;
+
+    if (!validScope || (!validClassification && !validRejection)) {
       const invalidResponseError = new Error(
         "Disease detection service returned an invalid response"
       );
@@ -174,7 +185,11 @@ const getDiseaseDetection = async ({ buffer, filename, mimeType }) => {
       throw invalidResponseError;
     }
 
-    return prediction;
+    // Only the disease contract crosses this boundary; no unexpected treatment fields.
+    return Object.fromEntries([
+      "status", "modelVersion", "guardVersion", "predictedClass", "crop", "condition",
+      "isHealthy", "confidence", "supportedClass", "supportedClassCount", "supportedCrops", "guidance", "message",
+    ].map((field) => [field, prediction[field] ?? null]));
   } catch (error) {
     if ([400, 415, 422].includes(error.upstreamStatus)) {
       const validationError = new Error(
