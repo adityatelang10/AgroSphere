@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { Route, Routes } from "react-router-dom";
 
 import AppShell from "./components/layout/AppShell";
 import GuestRoute from "./components/routing/GuestRoute";
@@ -24,12 +25,20 @@ import ProfilePage from "./pages/profile/ProfilePage";
 import NotFoundPage from "./pages/shared/NotFoundPage";
 import PublicTraceabilityPage from "./pages/traceability/PublicTraceabilityPage";
 
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+
 export default function App() {
   return (
     <Routes>
+      <Route
+        path="/"
+        element={
+          <Suspense fallback={<main aria-busy="true" aria-label="Loading AgroSphere" className="min-h-screen bg-[#14291d]" />}>
+            <LandingPage />
+          </Suspense>
+        }
+      />
       <Route element={<AppShell />}>
-        <Route index element={<Navigate to="/marketplace" replace />} />
-
         <Route element={<GuestRoute />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
