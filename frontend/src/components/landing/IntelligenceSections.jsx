@@ -1,0 +1,27 @@
+import { useState } from "react";
+import { Arrow, LandingLink, Photo, SampleLabel, SectionLabel } from "./LandingPrimitives";
+
+export function CropIntelligenceSection() {
+  return <section className="lp-section lp-crop-section" id="intelligence">
+    <div className="lp-crop-visual" data-reveal>
+      <Photo name="fields" alt="Patterns of growing crops seen from above" width="1100" height="730" />
+      <div className="lp-crop-inputs" aria-label="Seven Crop Advisor inputs">{["Nitrogen", "Phosphorus", "Potassium", "Temperature", "Humidity", "pH", "Rainfall"].map((input) => <span key={input}>{input}</span>)}</div>
+      <div className="lp-crop-result"><SampleLabel>Illustrative planning result</SampleLabel><div><strong>Maize</strong><span>99.3%<small>Model confidence</small></span></div><div className="lp-result-track"><span /></div></div>
+      <span className="lp-photo-index">01 / CROP INTELLIGENCE</span>
+    </div>
+    <div className="lp-feature-copy" data-reveal><SectionLabel number="03">Plan with evidence</SectionLabel><h2>A better season<br />starts <span className="lp-soft">with<br />better questions.</span></h2><p className="lp-body">What could thrive here? Crop Advisor brings seven soil and climate inputs together to rank suitable crops for a future growing plan.</p><div className="lp-model-line"><span>crop-v1</span><span>Random Forest</span><span>22 crop classes</span></div><p className="lp-fine">Planning support—not a yield guarantee. Model confidence is not the probability of a successful harvest, and a recommendation does not replace your current crop.</p><LandingLink to="/farmer/crop-recommendation" secondary>Meet Crop Advisor</LandingLink></div>
+  </section>;
+}
+
+export function DiseaseSection() {
+  const [supported, setSupported] = useState(true);
+  return <section className="lp-disease lp-section" id="plant-health">
+    <div className="lp-feature-copy" data-reveal><SectionLabel number="04" light>A closer look</SectionLabel><h2>Read the leaf.<br /><span className="lp-lime">Understand<br />the possibility.</span></h2><p className="lp-body">A photograph can offer a clue. Leaf Scanner classifies selected Bell Pepper, Potato and Tomato leaf conditions using a trained MobileNetV2 model.</p><div className="lp-model-line"><span>disease-v1</span><span>PlantVillage subset</span></div><p className="lp-fine">A visual prediction is decision support, not a confirmed diagnosis. Similar symptoms can have different causes.</p><LandingLink to="/farmer/disease-detection" secondary>Explore Leaf Scanner</LandingLink></div>
+    <div className="lp-leaf-composition" data-reveal><Photo name="leaf" alt="Close-up leaf texture with water droplets; illustrative photography, not a diagnostic input" width="1000" height="1500" /><div className="lp-scan-corners" aria-hidden="true"><i /><i /><i /><i /><span className="lp-scan-line" /></div><div className="lp-leaf-result"><SampleLabel>Illustrative classifier result</SampleLabel><div><span>Tomato<strong>Healthy</strong></span><span className="lp-confidence">93.3%<small>Model confidence</small></span></div><p>Confidence is not disease severity.</p></div></div>
+    <div className="lp-ood" data-reveal><div><span className="lp-eyebrow">KNOWING WHEN NOT TO ANSWER</span><h3>A useful model needs boundaries.</h3><p><b>disease-ood-v1.1</b> rejects many unrelated inputs rather than forcing every image into a known disease class. It cannot reject every unsupported image.</p></div><div className="lp-ood-demo"><div className="lp-segment" role="group" aria-label="Illustrative image guard scenario"><button aria-pressed={supported} onClick={() => setSupported(true)}>Supported leaf</button><button aria-pressed={!supported} onClick={() => setSupported(false)}>Unrelated image</button></div><div className="lp-ood-result" aria-live="polite"><span>{supported ? "LEAF INPUT" : "NON-LEAF INPUT"}</span><Arrow /><strong>{supported ? "Analyze" : "Reject example"}</strong></div><small>Interactive illustration—not a live model check.</small></div></div>
+  </section>;
+}
+
+export function IrrigationSection() {
+  return <section className="lp-section lp-irrigation" id="irrigation"><div data-reveal><SectionLabel number="05">Every drop, considered</SectionLabel><h2>Less guesswork.<br /><span className="lp-soft">More thoughtful<br />watering.</span></h2><p className="lp-body">Weather, crop stage, soil and moisture come together in practical irrigation guidance.</p><div className="lp-equation" aria-label="Irrigation calculation stages"><span>ETo<small>Reference demand</small></span><Arrow /><span>Kc<small>Crop coefficient</small></span><Arrow /><span>ETc<small>Crop demand</small></span></div><p className="lp-fine"><b>irrigation-v1</b> is a deterministic agronomic calculation engine—not a machine-learning model. Its advice depends on the inputs you provide.</p><LandingLink to="/farmer/irrigation-advisor" secondary>Explore Irrigation Advisor</LandingLink></div><div className="lp-water-visual" data-reveal><div className="lp-water-rings" aria-hidden="true"><i /><i /><i /></div><SampleLabel>Illustrative irrigation result</SampleLabel><div className="lp-water-number"><span data-count="5.45" data-decimals="2">5.45</span><small>mm</small></div><p className="lp-water-unit">Suggested irrigation depth</p><div className="lp-water-action"><span className="lp-dot" /><strong>Irrigate tomorrow</strong><span>Medium stress</span></div><p className="lp-water-caption">A recommendation, not an automated valve.</p></div></section>;
+}
