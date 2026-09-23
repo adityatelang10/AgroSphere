@@ -111,6 +111,50 @@ test("out-of-stock items are rejected before any payment order is created", asyn
   );
 });
 
+test("a removed listing is rejected from a stale cart even if stock remains", async () => {
+  const service = createCheckoutService({
+    CropModel: quoteCropModel([{ ...crop(), removedAt: new Date() }]),
+  });
+  await assert.rejects(
+    service.buildCheckoutQuote({ items: [{ cropId: IDS.cropA, quantity: 1 }], deliveryAddress: address }),
+    (error) => error.code === "LISTING_REMOVED" && error.statusCode === 409
+  );
+});
+
+test("removal after checkout started uses the existing reconciliation path", async () => {
+  let writes = 0;
+  const service = createCheckoutService({
+    CropModel: {
+      find: async () => [{ ...crop(), removedAt: new Date() }],
+      updateOne: async () => { writes += 1; },
+    },
+    OrderModel: {},
+  });
+  await assert.rejects(
+    service.finalizeCheckout({ itemsSnapshot: [{ crop: IDS.cropA, quantity: 1 }] }),
+    (error) => error.code === "RECONCILIATION_REQUIRED"
+  );
+  assert.equal(writes, 0);
+});
+
+test("atomic stock decrement refuses a listing removed after its initial read", async () => {
+  const service = createCheckoutService({
+    CropModel: {
+      find: async () => [crop()],
+      updateOne: async (filter) => {
+        assert.equal(filter.removedAt, null);
+        assert.deepEqual(filter.stockQuantity, { $gte: 1 });
+        return { modifiedCount: 0 };
+      },
+    },
+    OrderModel: {},
+  });
+  await assert.rejects(
+    service.finalizeCheckout({ itemsSnapshot: [{ crop: IDS.cropA, quantity: 1, farmer: IDS.farmerA }] }),
+    (error) => error.code === "RECONCILIATION_REQUIRED"
+  );
+});
+
 test("successful captured-payment finalization creates the existing Order shape", async () => {
   const crops = [crop()];
   const createdOrders = [];

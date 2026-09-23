@@ -131,6 +131,11 @@ const cropSchema = new mongoose.Schema(
       type: [cropImageSchema],
       default: [],
     },
+    // Removal hides the marketplace listing, not its historical document/media.
+    removedAt: {
+      type: Date,
+      default: null,
+    },
     averageRating: {
       type: Number,
       min: [0, "Average rating cannot be less than 0"],

@@ -1,3 +1,5 @@
+const { publicCropImages } = require("./cropImages");
+
 const publicLocation = (location) =>
   location
     ? { district: location.district, state: location.state }
@@ -22,7 +24,7 @@ const serializePublicCrop = (crop) => {
     harvestDate: crop.harvestDate,
     isOrganic: crop.isOrganic,
     location: publicLocation(crop.location),
-    images: (crop.images || []).map((image) => ({ url: image.url })),
+    images: publicCropImages(crop),
     averageRating: crop.averageRating,
     totalReviews: crop.totalReviews,
     createdAt: crop.createdAt,

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
+import CropImageGallery from "../../components/marketplace/CropImageGallery";
 import { useCart } from "../../context/CartContext";
 import { getCropById } from "../../services/cropService";
 import { getCropReviews } from "../../services/reviewService";
@@ -75,25 +76,8 @@ export default function CropDetailsPage() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.2fr,0.8fr]">
-      <section className="space-y-6 rounded-[2rem] border border-white/60 bg-white/85 p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950/75">
-        <div className="grid gap-4 md:grid-cols-2">
-          {(crop.images?.length ? crop.images : [{ url: "", publicId: "placeholder" }]).map(
-            (image, index) => (
-              <div
-                key={image.publicId || index}
-                className="h-64 overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-emerald-100 via-lime-50 to-amber-100 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800"
-              >
-                {image.url ? (
-                  <img
-                    src={image.url}
-                    alt={`${crop.name} ${index + 1}`}
-                    className="h-full w-full object-cover"
-                  />
-                ) : null}
-              </div>
-            )
-          )}
-        </div>
+      <section className="min-w-0 space-y-6 rounded-[2rem] border border-white/60 bg-white/85 p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950/75">
+        <CropImageGallery key={crop._id} crop={crop} />
 
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">

@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { createCrop } from "../../services/cropService";
+import CropImage from "../../components/marketplace/CropImage";
+import { selectCropImages } from "../../utils/cropImages";
 
 const initialFormState = {
   name: "",
@@ -20,10 +22,19 @@ const initialFormState = {
 export default function AddCropPage() {
   const navigate = useNavigate();
   const [formState, setFormState] = useState(initialFormState);
-  const [imageFile, setImageFile] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [imageError, setImageError] = useState("");
+  const submittingRef = useRef(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const previews = imageFiles.map((file) => ({ file, url: URL.createObjectURL(file) }));
+    setImagePreviews(previews);
+    return () => previews.forEach((preview) => URL.revokeObjectURL(preview.url));
+  }, [imageFiles]);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -35,28 +46,32 @@ export default function AddCropPage() {
   };
 
   const handleImageChange = (event) => {
-    if (event.target.files && event.target.files[0]) {
-      setImageFile(event.target.files[0]);
-    }
+    if (submittingRef.current) return;
+    const selection = selectCropImages(imageFiles, event.target.files);
+    setImageFiles(selection.files);
+    setImageError(selection.error);
+    // Allow selecting the same file again after removing its preview.
+    event.target.value = "";
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (submittingRef.current) return;
+    if (imageError) {
+      setError("Please fix the image selection before saving.");
+      return;
+    }
+    submittingRef.current = true;
     setError("");
     setFieldErrors({});
     setIsSubmitting(true);
 
     try {
-      // In a real application, you'd use FormData if uploading a file
-      // Since the backend handles image upload via multipart/form-data,
-      // we prepare a FormData object.
       const formData = new FormData();
       Object.entries(formState).forEach(([key, value]) => {
         formData.append(key, value);
       });
-      if (imageFile) {
-        formData.append("images", imageFile);
-      }
+      imageFiles.forEach((image) => formData.append("images", image));
 
       await createCrop(formData);
       navigate("/farmer/crops", { replace: true });
@@ -72,6 +87,7 @@ export default function AddCropPage() {
         setError(requestError.message || "Failed to add crop.");
       }
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -267,18 +283,37 @@ export default function AddCropPage() {
             {fieldErrors.state && <p className="mt-1 text-sm text-rose-600 dark:text-rose-400">{fieldErrors.state}</p>}
           </label>
 
-          <label className="block md:col-span-2">
-            <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Crop Image
-            </span>
+          <section className="min-w-0 md:col-span-2" aria-label="Crop image uploads">
+            <label htmlFor="crop-images" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Upload crop images
+            </label>
             <input
+              id="crop-images"
               type="file"
               accept="image/*"
+              multiple
+              disabled={isSubmitting}
+              aria-describedby="crop-images-help"
               onChange={handleImageChange}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
-            {fieldErrors.image && <p className="mt-1 text-sm text-rose-600 dark:text-rose-400">{fieldErrors.image}</p>}
-          </label>
+            <p id="crop-images-help" className="mt-2 text-xs text-slate-500 dark:text-slate-400">Select multiple images, up to 5 total. Maximum 5 MB each. The first image is the marketplace cover.</p>
+            {(imageError || fieldErrors.images) ? <p role="alert" className="mt-2 text-sm text-rose-600 dark:text-rose-400">{imageError || fieldErrors.images}</p> : null}
+            {imagePreviews.length ? (
+              <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {imagePreviews.map(({ file, url }, index) => (
+                  <li key={url} className="min-w-0 rounded-xl border border-slate-200 p-2 dark:border-slate-700">
+                    <div className="h-28 overflow-hidden rounded-lg bg-emerald-50 dark:bg-slate-800"><CropImage src={url} alt={`Selected crop image ${index + 1}`} /></div>
+                    <p className="mt-2 truncate text-xs text-slate-600 dark:text-slate-300" title={file.name}>{index === 0 ? "Cover: " : ""}{file.name}</p>
+                    <button type="button" disabled={isSubmitting} onClick={() => {
+                      setImageFiles((current) => current.filter((_, position) => position !== index));
+                      setImageError("");
+                    }} aria-label={`Remove selected image ${file.name}`} className="mt-2 rounded px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-50 dark:text-rose-300 dark:hover:bg-rose-950/40">Remove image</button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
 
           <label className="flex items-center gap-3 md:col-span-2">
             <input
@@ -314,7 +349,7 @@ export default function AddCropPage() {
               disabled={isSubmitting}
               className="rounded-2xl bg-emerald-600 px-8 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-emerald-500 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-400"
             >
-              {isSubmitting ? "Saving..." : "Save Crop"}
+              {isSubmitting ? "Uploading and saving..." : "Save Crop"}
             </button>
           </div>
         </form>

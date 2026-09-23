@@ -11,6 +11,8 @@ const mongoose = require("mongoose");
 const Crop = require("../src/models/Crop");
 const FarmerProfile = require("../src/models/FarmerProfile");
 const User = require("../src/models/User");
+const Order = require("../src/models/Order");
+const orderRoutes = require("../src/routes/orderRoutes");
 const { cloudinary } = require("../src/config/cloudinary");
 const cropRoutes = require("../src/routes/cropRoutes");
 const traceabilityRoutes = require("../src/routes/traceabilityRoutes");
@@ -56,6 +58,9 @@ describe("Public crop response privacy", { concurrency: false }, () => {
   let save;
   let remove;
   let destroy;
+  let upload;
+  let update;
+  let create;
 
   const populatedCrop = () => storedCrop && { ...storedCrop, farmer };
 
@@ -153,7 +158,7 @@ describe("Public crop response privacy", { concurrency: false }, () => {
 
     t.mock.method(Crop, "find", (filter) => {
       filters.push(filter);
-      return query(() => storedCrop ? [populatedCrop()] : []);
+      return query(() => storedCrop && !(filter.removedAt === null && storedCrop.removedAt) ? [populatedCrop()] : []);
     });
     t.mock.method(Crop, "findById", (id) => query(
       () => String(id) === CROP_ID ? storedCrop : null,
@@ -163,9 +168,16 @@ describe("Public crop response privacy", { concurrency: false }, () => {
       () => traceabilityId === storedCrop?.traceabilityId ? populatedCrop() : null
     ));
     t.mock.method(Crop, "exists", async () => false);
-    t.mock.method(Crop, "create", async (payload) => {
+    create = t.mock.method(Crop, "create", async (payload) => {
       storedCrop = { ...storedCrop, ...payload };
       return storedCrop;
+    });
+    update = t.mock.method(Crop, "updateOne", async (filter, change) => {
+      assert.equal(String(filter._id), CROP_ID);
+      assert.equal(String(filter.farmer), PROFILE_ID);
+      assert.equal(filter.removedAt, null);
+      Object.assign(storedCrop, change.$set);
+      return { modifiedCount: 1 };
     });
     t.mock.method(FarmerProfile, "findOne", async ({ user }) => ({
       _id: new mongoose.Types.ObjectId(String(user) === FARMER_ID
@@ -175,10 +187,12 @@ describe("Public crop response privacy", { concurrency: false }, () => {
       _id: id, name: "Example Farmer", role: id === CUSTOMER_ID ? "CUSTOMER" : "FARMER",
     }));
     destroy = t.mock.method(cloudinary.uploader, "destroy", async () => ({ result: "ok" }));
-    t.mock.method(cloudinary.uploader, "upload_stream", (options, callback) => new Writable({
+    let uploadCount = 0;
+    upload = t.mock.method(cloudinary.uploader, "upload_stream", (options, callback) => new Writable({
       write(chunk, encoding, done) { done(); },
       final(done) {
-        callback(null, { secure_url: CROP_URL, public_id: "new-private-image" });
+        const suffix = uploadCount++ ? `-${uploadCount}` : "";
+        callback(null, { secure_url: `${CROP_URL}${suffix}`, public_id: `new-private-image${suffix}` });
         done();
       },
     }));
@@ -188,7 +202,8 @@ describe("Public crop response privacy", { concurrency: false }, () => {
     app.use(express.json());
     app.use("/api/crops", cropRoutes);
     app.use("/api/traceability", traceabilityRoutes);
-    app.use((error, req, res, next) => res.status(500).json({ message: error.message }));
+    app.use("/api/orders", orderRoutes);
+    app.use((error, req, res, next) => res.status(error.name === "MulterError" ? 400 : error.statusCode || 500).json({ message: error.message }));
     const server = await new Promise((resolve, reject) => {
       const listening = app.listen(0, "127.0.0.1", () => resolve(listening));
       listening.once("error", reject);
@@ -310,24 +325,154 @@ describe("Public crop response privacy", { concurrency: false }, () => {
     assertPublicOnly(detail.body);
   });
 
-  test("owner image replacement uses the stored Cloudinary public id", async () => {
+  test("owner image replacement preserves previously stored Cloudinary media", async () => {
     const form = new FormData();
     form.append("replaceImages", "true");
     form.append("images", new Blob(["test image bytes"], { type: "image/jpeg" }), "test.jpg");
     const result = await request(`/api/crops/${CROP_ID}`, { method: "PUT", userId: FARMER_ID, body: form });
     assert.equal(result.status, 200);
     assert.equal(result.body.crop.images[0].publicId, "new-private-image");
-    assert.equal(destroy.mock.calls[0].arguments[0], "private-crop-image");
+    assert.equal(destroy.mock.callCount(), 0);
     assertPublicOnly((await request(`/api/crops/${CROP_ID}`)).body);
   });
 
-  test("owner delete retains image cleanup and makes crop unavailable", async () => {
+  test("owner removal hides the listing but retains document, media and public QR history", async () => {
+    const previous = JSON.parse(JSON.stringify(storedCrop));
     const result = await request(`/api/crops/${CROP_ID}`, { method: "DELETE", userId: FARMER_ID });
     assert.equal(result.status, 200);
-    assert.equal(destroy.mock.calls[0].arguments[0], "private-crop-image");
-    assert.equal(remove.mock.callCount(), 1);
+    assert.equal(destroy.mock.callCount(), 0);
+    assert.equal(remove.mock.callCount(), 0);
+    assert.equal(update.mock.callCount(), 1);
+    assert.ok(storedCrop.removedAt instanceof Date);
+    const after = JSON.parse(JSON.stringify(storedCrop));
+    delete after.removedAt;
+    assert.deepEqual(after, previous);
     assert.equal((await request(`/api/crops/${CROP_ID}`)).status, 404);
-    assert.equal((await request(`/api/traceability/${TRACE_ID}`)).status, 404);
+    assert.equal((await request("/api/crops")).body.count, 0);
+    const trace = await request(`/api/traceability/${TRACE_ID}`);
+    assert.equal(trace.status, 200);
+    assert.equal(trace.body.traceability.crop.name, "Tomato");
+    assert.equal(trace.body.traceability.crop.imageUrl, CROP_URL);
+    assertPublicOnly(trace.body);
+    const removedAt = storedCrop.removedAt;
+    assert.equal((await request(`/api/crops/${CROP_ID}`, { method: "DELETE", userId: FARMER_ID })).status, 200);
+    assert.strictEqual(storedCrop.removedAt, removedAt);
+    assert.equal(update.mock.callCount(), 1);
+    assert.equal((await request(`/api/crops/${CROP_ID}`, { method: "PUT", userId: FARMER_ID, body: { price: 50 } })).status, 409);
+  });
+
+  test("historical customer orders still populate the retained crop after removal", async (t) => {
+    await request(`/api/crops/${CROP_ID}`, { method: "DELETE", userId: FARMER_ID });
+    t.mock.method(Order, "find", (filter) => {
+      assert.equal(String(filter.customer), CUSTOMER_ID);
+      const result = {
+        select() { return this; }, sort() { return this; },
+        populate(fields) {
+          const cropPopulation = fields.find((field) => field.path === "items.crop");
+          assert.ok(cropPopulation);
+          assert.equal(cropPopulation.match, undefined); // No blanket soft-delete population filter.
+          return Promise.resolve([{ items: [{ crop: storedCrop, quantity: 2, priceAtOrder: 40 }] }]);
+        },
+      };
+      return result;
+    });
+    const response = await request("/api/orders/my-orders", { userId: CUSTOMER_ID });
+    assert.equal(response.status, 200);
+    assert.equal(response.body.orders[0].items[0].crop.name, "Tomato");
+    assert.equal(response.body.orders[0].items[0].crop.images[0].url, CROP_URL);
+    assert.equal(response.body.orders[0].items[0].priceAtOrder, 40);
+  });
+
+  const createForm = (count = 0, type = "image/jpeg", size = 16) => {
+    const form = new FormData();
+    for (const field of ["name", "category", "description", "price", "unit", "stockQuantity", "season"]) {
+      form.append(field, storedCrop[field]);
+    }
+    form.append("location", JSON.stringify({ district: "Bidar", state: "Karnataka" }));
+    for (let i = 0; i < count; i += 1) {
+      form.append("images", new Blob([new Uint8Array(size)], { type }), `crop-${i}.jpg`);
+    }
+    return form;
+  };
+
+  test("three images create one crop and all URLs remain in refreshed public detail", async () => {
+    const response = await request("/api/crops", { method: "POST", userId: FARMER_ID, body: createForm(3) });
+    assert.equal(response.status, 201);
+    assert.equal(create.mock.callCount(), 1);
+    assert.equal(upload.mock.callCount(), 3);
+    assert.equal(response.body.crop.images.length, 3);
+    for (let repeat = 0; repeat < 2; repeat += 1) {
+      const detail = await request(`/api/crops/${CROP_ID}`);
+      assert.equal(detail.body.crop.images.length, 3);
+      assertPublicOnly(detail.body);
+      assert.deepEqual(detail.body.crop.images.map((image) => image.url), response.body.crop.images.map((image) => image.url));
+    }
+  });
+
+  test("existing PUT appends images without removing the original or changing the trace ID", async () => {
+    const form = new FormData();
+    form.append("images", new Blob(["synthetic"], { type: "image/png" }), "extra.png");
+    const result = await request(`/api/crops/${CROP_ID}`, { method: "PUT", userId: FARMER_ID, body: form });
+    assert.equal(result.status, 200);
+    assert.equal(result.body.crop.images.length, 2);
+    assert.equal(result.body.crop.images[0].publicId, "private-crop-image");
+    assert.equal(result.body.crop.traceabilityId, TRACE_ID);
+    assert.equal(destroy.mock.callCount(), 0);
+  });
+
+  test("Multer still rejects non-images, more than five files and files over 5 MB", async () => {
+    for (const form of [createForm(1, "text/plain"), createForm(6), createForm(1, "image/jpeg", 5 * 1024 * 1024 + 1)]) {
+      const response = await request("/api/crops", { method: "POST", userId: FARMER_ID, body: form });
+      assert.equal(response.status, 400);
+    }
+    assert.equal(upload.mock.callCount(), 0);
+    assert.equal(create.mock.callCount(), 0);
+  });
+
+  test("append limit is checked before any Cloudinary upload", async () => {
+    storedCrop.images = Array.from({ length: 5 }, (_, i) => ({ url: `${CROP_URL}/${i}`, publicId: `existing-${i}` }));
+    const form = new FormData();
+    form.append("images", new Blob(["synthetic"], { type: "image/jpeg" }), "extra.jpg");
+    const response = await request(`/api/crops/${CROP_ID}`, { method: "PUT", userId: FARMER_ID, body: form });
+    assert.equal(response.status, 400);
+    assert.equal(upload.mock.callCount(), 0);
+    assert.equal(destroy.mock.callCount(), 0);
+  });
+
+  test("failed multi-image upload cleans only newly uploaded orphan media", async (t) => {
+    let calls = 0;
+    t.mock.method(cloudinary.uploader, "upload_stream", (options, callback) => new Writable({
+      write(chunk, encoding, done) { done(); },
+      final(done) {
+        calls += 1;
+        if (calls === 2) callback(new Error("Simulated Cloudinary failure"));
+        else callback(null, { secure_url: "https://example.com/new.jpg", public_id: "new-orphan" });
+        done();
+      },
+    }));
+    const response = await request("/api/crops", { method: "POST", userId: FARMER_ID, body: createForm(3) });
+    assert.equal(response.status, 500);
+    assert.equal(create.mock.callCount(), 0);
+    assert.deepEqual(destroy.mock.calls.map((call) => call.arguments[0]), ["new-orphan"]);
+    assert.equal(storedCrop.images[0].publicId, "private-crop-image");
+  });
+
+  test("old single-image fields normalize on read without a database migration", async () => {
+    for (const legacy of [{ imageUrl: CROP_URL }, { image: CROP_URL }, { image: { url: CROP_URL, publicId: "legacy-private" } }]) {
+      delete storedCrop.imageUrl;
+      delete storedCrop.image;
+      storedCrop.images = [];
+      Object.assign(storedCrop, legacy);
+      const before = JSON.stringify(storedCrop);
+      const response = await request(`/api/crops/${CROP_ID}`);
+      assert.deepEqual(response.body.crop.images, [{ url: CROP_URL }]);
+      assertPublicOnly(response.body);
+      assert.equal(JSON.stringify(storedCrop), before);
+      // Mongoose retains unknown legacy fields inside the hydrated document.
+      assert.deepEqual(serializePublicCrop(Crop.hydrate(storedCrop)).images, [{ url: CROP_URL }]);
+    }
+    assert.equal(save.mock.callCount(), 0);
+    assert.equal(update.mock.callCount(), 0);
   });
 
   test("owner QR action still returns the stable trace identity", async () => {

@@ -15,6 +15,10 @@ export function createCrop(cropData) {
   });
 }
 
+export function removeCrop(cropId) {
+  return apiRequest(`/api/crops/${cropId}`, { method: "DELETE" });
+}
+
 export function ensureCropTraceability(cropId) {
   return apiRequest(`/api/crops/${cropId}/traceability`, {
     method: "POST",

@@ -4,6 +4,7 @@ const { deleteFromCloudinary, uploadBufferToCloudinary } = require("../config/cl
 const Crop = require("../models/Crop");
 const FarmerProfile = require("../models/FarmerProfile");
 const { serializePublicCrop } = require("../utils/publicCrop");
+const { publicCropImages } = require("../utils/cropImages");
 const {
   assignTraceabilityIdToExistingCrop,
   createAvailableTraceabilityId,
@@ -459,7 +460,8 @@ const listCrops = async (req, res, next) => {
   try {
     const { search, category, season, isOrganic, minPrice, maxPrice, district, state } = req.query;
 
-    const filter = {};
+    // Null also matches legacy documents where removedAt is absent.
+    const filter = { removedAt: null };
 
     if (search) {
       filter.$text = { $search: search };
@@ -526,7 +528,7 @@ const getCropById = async (req, res, next) => {
   try {
     const crop = await Crop.findById(req.params.id).populate(populatePublicFarmer);
 
-    if (!crop) {
+    if (!crop || crop.removedAt) {
       return res.status(404).json({
         success: false,
         message: "Crop not found",
@@ -577,10 +579,20 @@ const updateCrop = async (req, res, next) => {
       });
     }
 
-    uploadedImages = await uploadImages(req.files);
+    if (crop.removedAt) {
+      return res.status(409).json({ success: false, message: "This listing has been removed." });
+    }
 
     const replaceImages = parseBoolean(req.body.replaceImages) === true;
-    const previousImages = [...crop.images];
+    const incomingCount = req.files?.length || 0;
+    const existingCount = publicCropImages(crop).length;
+    const original = crop.toObject ? crop.toObject() : crop;
+    const legacyCount = publicCropImages({ image: original.image, imageUrl: original.imageUrl }).length;
+    if (incomingCount + (replaceImages && incomingCount > 0 ? legacyCount : existingCount) > 5) {
+      return res.status(400).json({ success: false, message: "A crop can have at most 5 images" });
+    }
+
+    uploadedImages = await uploadImages(req.files);
     const nextImages =
       replaceImages && uploadedImages.length > 0
         ? uploadedImages
@@ -601,9 +613,8 @@ const updateCrop = async (req, res, next) => {
     await crop.save();
     cropSaved = true;
 
-    if (replaceImages && uploadedImages.length > 0) {
-      await Promise.allSettled(previousImages.map((image) => deleteFromCloudinary(image.publicId)));
-    }
+    // Replaced media may still appear in existing orders or shared references.
+    // Only new, uncommitted uploads are cleaned up on failure below.
 
     return res.status(200).json({
       success: true,
@@ -631,7 +642,7 @@ const deleteCrop = async (req, res, next) => {
     if (!farmerProfile) {
       return res.status(404).json({
         success: false,
-        message: "Farmer profile not found. Create a farmer profile before deleting crops.",
+        message: "Farmer profile not found. Create a farmer profile before removing listings.",
       });
     }
 
@@ -647,16 +658,22 @@ const deleteCrop = async (req, res, next) => {
     if (!crop.farmer.equals(farmerProfile._id)) {
       return res.status(403).json({
         success: false,
-        message: "You can only delete your own crop listings",
+        message: "You can only remove your own crop listings",
       });
     }
 
-    await Promise.allSettled(crop.images.map((image) => deleteFromCloudinary(image.publicId)));
-    await crop.deleteOne();
+    // Update only the removal marker, including for legacy documents. Keep the
+    // crop ID, trace ID, stock, order references and all Cloudinary media intact.
+    if (!crop.removedAt) {
+      await Crop.updateOne(
+        { _id: crop._id, farmer: farmerProfile._id, removedAt: null },
+        { $set: { removedAt: new Date() } }
+      );
+    }
 
     return res.status(200).json({
       success: true,
-      message: "Crop deleted successfully",
+      message: "Listing removed from the marketplace. Existing history is preserved.",
     });
   } catch (error) {
     return next(error);

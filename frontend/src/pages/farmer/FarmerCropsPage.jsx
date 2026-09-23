@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import TraceabilityQrPanel from "../../components/traceability/TraceabilityQrPanel";
 import { useAuth } from "../../context/AuthContext";
-import { ensureCropTraceability, listCrops } from "../../services/cropService";
+import { ensureCropTraceability, listCrops, removeCrop } from "../../services/cropService";
+import CropImage from "../../components/marketplace/CropImage";
+import { getCropImages } from "../../utils/cropImages";
 import { formatCurrency } from "../../utils/formatters";
 
 const getStockStatus = (stockQuantity) => {
@@ -43,6 +45,10 @@ export default function FarmerCropsPage() {
   const [selectedCrop, setSelectedCrop] = useState(null);
   const [traceabilityError, setTraceabilityError] = useState("");
   const [preparingCropId, setPreparingCropId] = useState("");
+  const [removingCropId, setRemovingCropId] = useState("");
+  const [removalMessage, setRemovalMessage] = useState("");
+  const [removalError, setRemovalError] = useState("");
+  const removingRef = useRef(false);
 
   useEffect(() => {
     const loadFarmerCrops = async () => {
@@ -95,6 +101,25 @@ export default function FarmerCropsPage() {
     }
   };
 
+  const handleRemoveListing = async (crop) => {
+    if (removingRef.current) return;
+    if (!window.confirm(`Are you sure you want to remove ${crop.name} from the marketplace? Existing orders, images and QR history will be preserved.`)) return;
+    removingRef.current = true;
+    setRemovingCropId(crop._id);
+    setRemovalError("");
+    setRemovalMessage("");
+    try {
+      await removeCrop(crop._id);
+      setCrops((current) => current.filter((item) => item._id !== crop._id));
+      setRemovalMessage(`${crop.name} listing removed. Existing history is preserved.`);
+    } catch (requestError) {
+      setRemovalError(requestError.message || "The listing could not be removed. Please try again.");
+    } finally {
+      removingRef.current = false;
+      setRemovingCropId("");
+    }
+  };
+
   const stockCounts = crops.reduce(
     (counts, crop) => {
       const status = getStockStatus(crop.stockQuantity);
@@ -142,6 +167,9 @@ export default function FarmerCropsPage() {
           Add Crop
         </Link>
       </header>
+
+      {removalMessage ? <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">{removalMessage}</p> : null}
+      {removalError ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{removalError}</p> : null}
 
       {!isLoading && !error ? (
         <section aria-label="Crop inventory summary">
@@ -213,15 +241,7 @@ export default function FarmerCropsPage() {
                 className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-950/80 sm:min-h-52 sm:flex-row"
               >
                 <div className="h-44 w-full shrink-0 bg-gradient-to-br from-emerald-100 via-lime-50 to-amber-100 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 sm:h-auto sm:min-h-[180px] sm:w-2/5">
-                  {crop.images?.[0]?.url ? (
-                    <img src={crop.images[0].url} alt={crop.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-emerald-700/60 dark:text-emerald-300/60">
-                      <svg viewBox="0 0 24 24" className="h-9 w-9 fill-none stroke-current stroke-[1.6]" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M12 21V10M12 14c-4.5 0-7-2.5-7-7 4.5 0 7 2.5 7 7Zm0-2c4.5 0 7-2.5 7-7-4.5 0-7 2.5-7 7Z" />
-                      </svg>
-                    </div>
-                  )}
+                  <CropImage src={getCropImages(crop)[0]?.url} alt={crop.name} />
                 </div>
 
                 <div className="flex min-w-0 flex-1 flex-col p-4">
@@ -275,6 +295,9 @@ export default function FarmerCropsPage() {
                       className="inline-flex rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:bg-slate-400 dark:focus-visible:ring-offset-slate-950"
                     >
                       {preparingCropId === crop._id ? "Preparing..." : "QR / Trace"}
+                    </button>
+                    <button type="button" onClick={() => handleRemoveListing(crop)} disabled={Boolean(removingCropId) || preparingCropId === crop._id} className="inline-flex rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-rose-500 disabled:cursor-wait disabled:opacity-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/40">
+                      {removingCropId === crop._id ? "Removing..." : "Remove Listing"}
                     </button>
                   </div>
                 </div>

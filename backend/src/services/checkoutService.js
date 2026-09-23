@@ -114,6 +114,14 @@ const createCheckoutService = ({ CropModel = Crop, OrderModel = Order } = {}) =>
     const itemsSnapshot = normalizedItems.map((item) => {
       const crop = cropMap.get(item.cropId);
 
+      if (crop.removedAt) {
+        throw new CheckoutError(
+          `${crop.name} has been removed from the marketplace. Remove it from your cart.`,
+          409,
+          "LISTING_REMOVED"
+        );
+      }
+
       if (!crop.farmer?._id || !crop.farmer?.user) {
         throw new CheckoutError(
           `Farmer information is incomplete for crop ${crop.name}.`,
@@ -237,7 +245,7 @@ const createCheckoutService = ({ CropModel = Crop, OrderModel = Order } = {}) =>
 
     for (const item of itemsSnapshot) {
       const crop = currentCropMap.get(String(item.crop));
-      if (!crop || crop.stockQuantity < item.quantity) {
+      if (!crop || crop.removedAt || crop.stockQuantity < item.quantity) {
         throw new CheckoutError(
           "Payment was verified, but inventory changed. Manual reconciliation is required.",
           409,
@@ -271,7 +279,7 @@ const createCheckoutService = ({ CropModel = Crop, OrderModel = Order } = {}) =>
     try {
       for (const item of itemsSnapshot) {
         const updateResult = await CropModel.updateOne(
-          { _id: item.crop, stockQuantity: { $gte: item.quantity } },
+          { _id: item.crop, removedAt: null, stockQuantity: { $gte: item.quantity } },
           { $inc: { stockQuantity: -item.quantity } }
         );
 

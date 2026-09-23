@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 
 import { formatCurrency } from "../../utils/formatters";
 import ScrollReveal from "../ui/ScrollReveal";
+import CropImage from "./CropImage";
+import { getCropImages } from "../../utils/cropImages";
 
 const getActionLabel = (crop, userRole) => {
   if (crop.stockQuantity <= 0) {
@@ -29,13 +31,11 @@ export default function MarketplaceCropCard({ crop, index, userRole, onAddToCart
         aria-label={`View details for ${crop.name}`}
         className="block h-40 overflow-hidden bg-gradient-to-br from-emerald-100 via-lime-50 to-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800"
       >
-        {crop.images?.[0]?.url ? (
-          <img
-            src={crop.images[0].url}
-            alt={crop.name}
-            className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.015] group-focus-within:scale-[1.015] motion-reduce:transform-none"
-          />
-        ) : null}
+        <CropImage
+          src={getCropImages(crop)[0]?.url}
+          alt={crop.name}
+          className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.015] group-focus-within:scale-[1.015] motion-reduce:transform-none"
+        />
       </Link>
 
       <div className="flex flex-1 flex-col gap-3 p-4">
