@@ -95,6 +95,28 @@ test("hover spacing is reserved and animated only on text, with center-out lines
   assert.doesNotMatch(css, /ag-cart-count[^}]*letter-spacing|ag-brand[^}]*letter-spacing:var/);
 });
 
+test("shared navbar is edge-to-edge with a subtle bottom rule, not a floating card", () => {
+  const css = read("styles/navigation.css");
+  const header = css.match(/\.ag-app-nav \{([\s\S]*?)\}/)[1];
+  for (const rule of ["top:0", "margin:0", "width:100%", "border:0", "border-bottom:1px solid var(--nav-border)", "border-radius:0", "box-shadow:none"]) {
+    assert.ok(header.includes(rule), `Missing integrated navbar rule: ${rule}`);
+  }
+  assert.doesNotMatch(css, /\.ag-app-nav \{[^}]*width:calc|\.ag-app-nav \{[^}]*border-radius:(?:20|24)px/);
+  assert.match(css, /\.ag-nav-links \{[^}]*justify-content:center/);
+});
+
+test("slide and fade are smooth, with a stronger surface only after scrolling or opening the menu", () => {
+  const css = read("styles/navigation.css");
+  assert.match(css, /transform \.6s cubic-bezier\(\.4,0,\.2,1\),opacity \.6s/);
+  assert.match(css, /\.ag-app-nav\.is-hidden \{ transform:translateY\(-110%\); opacity:0; pointer-events:none/);
+  assert.match(css, /\.ag-app-nav:has\(:focus-visible\),\.ag-app-nav\.is-open \{[^}]*opacity:1; pointer-events:auto/);
+  assert.match(css, /\.ag-app-nav\.is-scrolled,\.ag-app-nav\.is-open \{ background:var\(--nav-scrolled-surface\); backdrop-filter:blur\(14px\)/);
+  const hook = read("hooks/useNavbarScroll.js");
+  assert.match(hook, /classList.toggle\("is-scrolled", window.scrollY > APP_NAVBAR_THRESHOLDS.top\)/);
+  assert.match(hook, /classList.remove\("is-hidden", "is-scrolled"\)/);
+  assert.match(css, /prefers-reduced-motion:reduce[\s\S]*opacity:1; pointer-events:auto/);
+});
+
 test("footer is product-focused with readable type and no empty college column", () => {
   const footer = read("components/landing/ClosingSections.jsx");
   const css = read("styles/landing.css");

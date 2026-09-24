@@ -10,6 +10,10 @@ export default function useNavbarScroll(ref, pathname, menuOpen) {
     let frame = 0;
     let state = { previousY: window.scrollY, direction: 0, distance: 0, hidden: false };
 
+    const syncSurface = () => {
+      header.classList.toggle("is-scrolled", window.scrollY > APP_NAVBAR_THRESHOLDS.top);
+    };
+
     const update = () => {
       frame = 0;
       const scrollRange = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -21,11 +25,13 @@ export default function useNavbarScroll(ref, pathname, menuOpen) {
         Boolean(header.querySelector('[aria-expanded="true"]'));
       state = nextNavbarState(state, Math.min(scrollRange, window.scrollY), locked, APP_NAVBAR_THRESHOLDS);
       header.classList.toggle("is-hidden", state.hidden);
+      syncSurface();
     };
     const schedule = () => { if (!frame) frame = window.requestAnimationFrame(update); };
     const reveal = () => {
       state = nextNavbarState(state, window.scrollY, true, APP_NAVBAR_THRESHOLDS);
       header.classList.remove("is-hidden");
+      syncSurface();
     };
     reveal();
     window.addEventListener("scroll", schedule, { passive: true });
@@ -44,7 +50,7 @@ export default function useNavbarScroll(ref, pathname, menuOpen) {
       header.removeEventListener("focusout", schedule);
       header.removeEventListener("keydown", schedule);
       header.removeEventListener("pointerdown", schedule);
-      header.classList.remove("is-hidden");
+      header.classList.remove("is-hidden", "is-scrolled");
     };
   }, [ref, pathname, menuOpen]);
 }

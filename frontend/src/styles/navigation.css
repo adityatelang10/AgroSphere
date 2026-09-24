@@ -3,7 +3,8 @@
 .ag-brand .ag-brand-mark { width:32px; height:32px; flex-shrink:0; }
 .ag-brand-dot { color:#a4c85a; }
 .ag-app-nav {
-  --nav-surface:rgba(243,248,238,.92);
+  --nav-surface:rgba(246,248,239,.58);
+  --nav-scrolled-surface:rgba(243,248,238,.94);
   --nav-text:#234632;
   --nav-accent:#305f40;
   --nav-border:rgba(58,97,62,.21);
@@ -12,12 +13,13 @@
   --nav-badge:#deead7;
   --nav-badge-text:#254532;
   --nav-cta-text:#f5f8ef;
-  --nav-shadow:0 8px 28px rgba(36,67,40,.08);
+  --nav-menu-shadow:0 8px 28px rgba(36,67,40,.08);
   --nav-hover-spacing:3px;
-  position:sticky; top:12px; z-index:40; margin:12px auto 0; width:calc(100% - 32px); max-width:1540px; font-family:"DM Sans",sans-serif; color:var(--nav-text); background:var(--nav-surface); border:1px solid var(--nav-border); border-radius:24px; backdrop-filter:blur(18px); box-shadow:var(--nav-shadow); transition:transform .55s cubic-bezier(.22,.7,.2,1),background .32s,color .32s,border-color .32s;
+  position:sticky; top:0; z-index:40; margin:0; width:100%; font-family:"DM Sans",sans-serif; color:var(--nav-text); background:var(--nav-surface); border:0; border-bottom:1px solid var(--nav-border); border-radius:0; backdrop-filter:blur(0); box-shadow:none; opacity:1; transition:transform .6s cubic-bezier(.4,0,.2,1),opacity .6s cubic-bezier(.4,0,.2,1),background .35s,backdrop-filter .35s,color .32s,border-color .32s;
 }
 .dark .ag-app-nav {
-  --nav-surface:rgba(24,43,34,.92);
+  --nav-surface:rgba(24,43,34,.56);
+  --nav-scrolled-surface:rgba(24,43,34,.94);
   --nav-text:#e7eee3;
   --nav-accent:#bdd8b0;
   --nav-border:rgba(178,210,164,.28);
@@ -26,16 +28,17 @@
   --nav-badge:#bdd3b4;
   --nav-badge-text:#203d2b;
   --nav-cta-text:#1b3025;
-  --nav-shadow:0 8px 28px rgba(0,0,0,.18);
+  --nav-menu-shadow:0 8px 28px rgba(0,0,0,.18);
 }
+.ag-app-nav.is-scrolled,.ag-app-nav.is-open { background:var(--nav-scrolled-surface); backdrop-filter:blur(14px); }
 .ag-app-nav .ag-brand-dot { color:var(--nav-accent); }
-.ag-app-nav.is-hidden { transform:translateY(calc(-100% - 28px)); }
-.ag-app-nav:has(:focus-visible),.ag-app-nav.is-open { transform:none; }
+.ag-app-nav.is-hidden { transform:translateY(-110%); opacity:0; pointer-events:none; }
+.ag-app-nav:has(:focus-visible),.ag-app-nav.is-open { transform:none; opacity:1; pointer-events:auto; }
 .ag-app-nav :is(a,button):focus-visible { outline:2px solid var(--nav-accent); outline-offset:4px; }
-.ag-nav-bar { display:flex; align-items:center; gap:20px; min-height:78px; padding:12px 24px; position:relative; }
+.ag-nav-bar { display:flex; align-items:center; gap:28px; min-height:82px; max-width:1680px; margin:0 auto; padding:12px clamp(24px,3vw,56px); position:relative; }
 .ag-nav-bar > .ag-brand { font-size:24px; }
 .ag-nav-panel { display:flex; align-items:center; gap:14px; flex:1; min-width:0; order:2; }
-.ag-nav-links { display:flex; align-items:center; gap:2px; flex:1; }
+.ag-nav-links { display:flex; align-items:center; justify-content:center; gap:6px; flex:1; }
 .ag-nav-link,.ag-nav-cta,.ag-nav-cart { display:inline-flex; align-items:center; justify-content:center; gap:7px; border-radius:30px; padding:10px 11px; min-height:44px; font-size:16px; font-weight:500; line-height:1.4; color:inherit; white-space:nowrap; text-decoration:none; transition:color .25s,background .25s,border-color .25s; }
 .ag-nav-link,.ag-tool-link { position:relative; background:transparent; }
 .ag-nav-link:is(:hover,:active,:focus-visible,.is-active),.ag-tool-link:is(:hover,:active,:focus-visible,.is-active) { background:transparent; color:var(--nav-accent); }
@@ -61,7 +64,7 @@
 .ag-nav-tools .ag-nav-theme > button:hover,.ag-nav-tools .ag-nav-notifications button[aria-label="Open notifications"]:hover { background:var(--nav-highlight); color:var(--nav-accent); border-color:var(--nav-accent); }
 .ag-nav-theme > button > span:first-child { display:none; }
 .ag-intelligence { position:relative; }
-.ag-intelligence-menu { position:absolute; top:100%; left:0; z-index:50; width:280px; max-width:calc(100vw - 48px); margin-top:12px; padding:8px; border:1px solid var(--nav-border); border-radius:20px; background:var(--nav-popover); box-shadow:var(--nav-shadow); }
+.ag-intelligence-menu { position:absolute; top:100%; left:0; z-index:50; width:280px; max-width:calc(100vw - 48px); margin-top:12px; padding:8px; border:1px solid var(--nav-border); border-radius:20px; background:var(--nav-popover); box-shadow:var(--nav-menu-shadow); }
 .ag-tool-link { display:block; padding:11px 14px; border-radius:12px; font-size:16px; line-height:1.4; color:var(--nav-text); transition:color .32s; }
 .ag-menu-toggle { display:none; width:44px; height:44px; flex-shrink:0; border:1px solid var(--nav-border); border-radius:50%; align-items:center; justify-content:center; flex-direction:column; gap:5px; }
 .ag-menu-toggle span { width:17px; height:1px; background:currentColor; transition:transform .25s; }
@@ -73,11 +76,12 @@
   .ag-nav-bar { padding-inline:18px; gap:12px; }
   .ag-nav-bar > .ag-brand { font-size:22px; }
   .ag-nav-panel { gap:8px; }
+  .ag-nav-links { gap:2px; }
   .ag-nav-link { padding-inline:8px; }
 }
 @media (max-width:1279px) {
   .ag-app-nav { --nav-hover-spacing:.6px; }
-  .ag-nav-bar { flex-wrap:wrap; gap:0 14px; padding:12px 20px; }
+  .ag-nav-bar { flex-wrap:wrap; gap:0 14px; min-height:74px; padding:12px 24px; }
   .ag-nav-bar > .ag-brand { margin-right:auto; }
   .ag-nav-cart { order:0; }
   .ag-menu-toggle { display:flex; }
@@ -92,8 +96,7 @@
   .ag-nav-notifications > .relative > div { left:12px; right:12px; top:auto; bottom:76px; width:auto; max-height:calc(100dvh - 180px); overflow-y:auto; }
 }
 @media (max-width:600px) {
-  .ag-app-nav { width:calc(100% - 20px); top:8px; margin-top:8px; border-radius:20px; }
-  .ag-nav-bar { padding:10px 12px; min-height:70px; gap:0 8px; }
+  .ag-nav-bar { padding:10px 16px; min-height:68px; gap:0 8px; }
   .ag-nav-bar > .ag-brand { font-size:20px; gap:5px; }
   .ag-brand .ag-brand-mark { width:28px; height:28px; }
   .ag-nav-cart { font-size:15px; padding-inline:9px; gap:6px; }
@@ -106,5 +109,5 @@
 }
 @media (prefers-reduced-motion:reduce) {
   .ag-app-nav,.ag-app-nav * { transition:none!important; }
-  .ag-app-nav.is-hidden { transform:none; }
+  .ag-app-nav.is-hidden { transform:none; opacity:1; pointer-events:auto; }
 }
