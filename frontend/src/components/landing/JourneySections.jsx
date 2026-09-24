@@ -21,7 +21,7 @@ export function ProblemSection() {
 export function JourneySection() {
   return <section id="journey" className="lp-journey lp-section" data-journey>
     <div className="lp-journey-sticky"><SectionLabel number="02" light>The connected journey</SectionLabel><h2 data-reveal>Not another tool.<br /><span className="lp-lime">A connected<br />way forward.</span></h2><p className="lp-body">Five stages. One platform.<br />From understanding your field to sharing your harvest.</p><div className="lp-journey-photo"><Photo name="fields" alt="Aerial view of cultivated green fields beside woodland" width="1100" height="730" /><span>FROM FIELD TO NEXT ACTION <Arrow diagonal /></span></div></div>
-    <ol className="lp-journey-steps">{journeyStages.map((stage, index) => <li key={stage.title} data-journey-step data-reveal><span className="lp-stage-number">0{index + 1}</span><div><p className="lp-eyebrow">{stage.title}</p><h3>{stage.detail}</h3><p>{stage.body}</p><small>{stage.tags}</small></div></li>)}</ol>
+    <ol className="lp-journey-steps">{journeyStages.map((stage, index) => <li key={stage.title} data-journey-step><span className="lp-stage-number">0{index + 1}</span><div><p className="lp-eyebrow">{stage.title}</p><h3>{stage.detail}</h3><p>{stage.body}</p><small>{stage.tags}</small></div></li>)}</ol>
   </section>;
 }
 

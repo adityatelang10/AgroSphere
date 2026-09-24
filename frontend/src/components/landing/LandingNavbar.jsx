@@ -28,7 +28,7 @@ export default function LandingNavbar() {
     const previousOverflow = document.body.style.overflow;
     modal.showModal();
     document.body.style.overflow = "hidden";
-    const desktop = window.matchMedia("(min-width: 1200px)");
+    const desktop = window.matchMedia("(min-width: 1280px)");
     const closeOnDesktop = () => { if (desktop.matches) setOpen(false); };
     desktop.addEventListener("change", closeOnDesktop);
     return () => {

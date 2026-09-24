@@ -5,13 +5,16 @@ import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import NotificationBell from "../ui/NotificationBell";
 import ThemeToggle from "../ui/ThemeToggle";
+import NavbarBrand from "./NavbarBrand";
+import useNavbarScroll from "../../hooks/useNavbarScroll";
 
 const getLinkClasses = ({ isActive }) =>
-  `whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition ${
-    isActive
-      ? "bg-emerald-600 text-white shadow-glow"
-      : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-emerald-300"
-  }`;
+  `ag-nav-link${isActive ? " is-active" : ""}`;
+
+// The invisible CSS copy reserves the expanded text width, avoiding hover reflow.
+function NavLabel({ children }) {
+  return <span className="ag-nav-label" data-label={children}><span>{children}</span></span>;
+}
 
 const FARM_INTELLIGENCE_LINKS = [
   { label: "Crop Advisor", to: "/farmer/crop-recommendation" },
@@ -29,15 +32,46 @@ export default function TopNav() {
   const { uniqueItemCount } = useCart();
   const canAccessCart = user?.role === "CUSTOMER";
   const [isIntelligenceOpen, setIsIntelligenceOpen] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const headerRef = useRef(null);
+  const mobileButtonRef = useRef(null);
   const intelligenceMenuRef = useRef(null);
   const intelligenceButtonRef = useRef(null);
   const isIntelligenceRoute = FARM_INTELLIGENCE_LINKS.some((link) =>
     location.pathname.startsWith(link.to)
   );
+  useNavbarScroll(headerRef, location.pathname, isMobileOpen || isIntelligenceOpen);
 
   useEffect(() => {
     setIsIntelligenceOpen(false);
+    setIsMobileOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isMobileOpen) return undefined;
+    const desktop = window.matchMedia("(min-width: 1280px)");
+    const onResize = () => { if (desktop.matches) setIsMobileOpen(false); };
+    const onPointer = (event) => {
+      if (!headerRef.current?.contains(event.target)) {
+        setIsMobileOpen(false);
+        setIsIntelligenceOpen(false);
+      }
+    };
+    const onKey = (event) => {
+      if (event.key === "Escape" && !isIntelligenceOpen) {
+        setIsMobileOpen(false);
+        mobileButtonRef.current?.focus({ preventScroll: true });
+      }
+    };
+    desktop.addEventListener("change", onResize);
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      desktop.removeEventListener("change", onResize);
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isMobileOpen, isIntelligenceOpen]);
 
   useEffect(() => {
     if (!isIntelligenceOpen) {
@@ -72,42 +106,42 @@ export default function TopNav() {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/60 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 py-3 sm:px-6 lg:px-8 xl:flex-nowrap">
-        <div className="flex shrink-0 items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 via-lime-500 to-amber-400 text-lg font-bold text-slate-950 shadow-glow">
-            A
-          </div>
-          <div>
-            <NavLink
-              to="/marketplace"
-              className="font-display text-lg font-bold text-slate-950 dark:text-slate-50"
-            >
-              AgroSphere
-            </NavLink>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              AI-powered farmer marketplace
-            </p>
-          </div>
-        </div>
-
-        <nav className="order-3 flex w-full min-w-0 flex-wrap items-center gap-2 xl:order-none xl:w-auto xl:flex-1 xl:flex-nowrap">
+    <header ref={headerRef} className={`ag-app-nav${isMobileOpen ? " is-open" : ""}`}>
+      <div className="ag-nav-bar">
+        <NavbarBrand to="/marketplace" />
+        {canAccessCart ? (
+          <NavLink
+            to="/cart"
+            aria-label={`Open cart with ${uniqueItemCount} product${uniqueItemCount === 1 ? "" : "s"}`}
+            className={({ isActive }) => `ag-nav-cart${isActive ? " is-active" : ""}`}
+          >
+            <span>Cart</span><span className="ag-cart-count">{uniqueItemCount}</span>
+          </NavLink>
+        ) : null}
+        <button ref={mobileButtonRef} type="button" className="ag-menu-toggle" aria-label={isMobileOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={isMobileOpen} aria-controls="app-navigation-panel" onClick={() => {
+          setIsMobileOpen((open) => !open);
+          setIsIntelligenceOpen(false);
+        }}>
+          <span /><span />
+        </button>
+        <div id="app-navigation-panel" className="ag-nav-panel">
+        <nav className="ag-nav-links" aria-label="Application navigation" onClick={(event) => { if (event.target.closest("a")) setIsMobileOpen(false); }}>
           <NavLink to="/marketplace" className={getLinkClasses}>
-            Marketplace
+            <NavLabel>Marketplace</NavLabel>
           </NavLink>
 
           {user?.role === "CUSTOMER" ? (
             <NavLink to="/orders" className={getLinkClasses}>
-              Orders
+              <NavLabel>Orders</NavLabel>
             </NavLink>
           ) : null}
 
           {user?.role === "FARMER" ? (
             <>
               <NavLink to="/farmer/dashboard" className={getLinkClasses}>
-                Dashboard
+                <NavLabel>Dashboard</NavLabel>
               </NavLink>
-              <div ref={intelligenceMenuRef} className="relative">
+              <div ref={intelligenceMenuRef} className="ag-intelligence">
                 <button
                   ref={intelligenceButtonRef}
                   type="button"
@@ -115,13 +149,9 @@ export default function TopNav() {
                   aria-haspopup="true"
                   aria-controls="farm-intelligence-menu"
                   onClick={() => setIsIntelligenceOpen((isOpen) => !isOpen)}
-                  className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 ${
-                    isIntelligenceRoute
-                      ? "bg-emerald-600 text-white shadow-glow"
-                      : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-emerald-300"
-                  }`}
+                  className={`ag-nav-link${isIntelligenceRoute ? " is-active" : ""}`}
                 >
-                  Farm Intelligence
+                  <NavLabel>Farm Intelligence</NavLabel>
                   <svg
                     viewBox="0 0 20 20"
                     fill="currentColor"
@@ -142,7 +172,7 @@ export default function TopNav() {
                   <div
                     id="farm-intelligence-menu"
                     aria-label="Farm Intelligence tools"
-                    className="absolute right-0 z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-950 sm:left-0 sm:right-auto"
+                    className="ag-intelligence-menu"
                   >
                     {FARM_INTELLIGENCE_LINKS.map((link) => (
                       <NavLink
@@ -150,24 +180,20 @@ export default function TopNav() {
                         to={link.to}
                         onClick={() => setIsIntelligenceOpen(false)}
                         className={({ isActive }) =>
-                          `block rounded-xl px-3 py-2.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
-                            isActive
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-                              : "text-slate-700 hover:bg-slate-100 hover:text-emerald-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-emerald-300"
-                          }`
+                          `ag-tool-link${isActive ? " is-active" : ""}`
                         }
                       >
-                        {link.label}
+                        <NavLabel>{link.label}</NavLabel>
                       </NavLink>
                     ))}
                   </div>
                 ) : null}
               </div>
               <NavLink to="/farmer/crops" className={getLinkClasses}>
-                My Crops
+                <NavLabel>My Crops</NavLabel>
               </NavLink>
               <NavLink to="/farmer/orders" className={getLinkClasses}>
-                Farmer Orders
+                <NavLabel>Farmer Orders</NavLabel>
               </NavLink>
             </>
           ) : null}
@@ -175,48 +201,36 @@ export default function TopNav() {
           {isAuthenticated ? (
             <NavLink
               to="/profile"
-              className={(linkState) => `${getLinkClasses(linkState)} xl:ml-auto`}
+              className={getLinkClasses}
             >
-              Profile
+              <NavLabel>Profile</NavLabel>
             </NavLink>
           ) : null}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2">
-          {canAccessCart ? (
-            <NavLink
-              to="/cart"
-              aria-label={`Open cart with ${uniqueItemCount} product${uniqueItemCount === 1 ? "" : "s"}`}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-800 dark:hover:bg-slate-800 dark:hover:text-emerald-300"
-            >
-              <span>Cart</span>
-              <span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-slate-950">
-                {uniqueItemCount}
-              </span>
-            </NavLink>
-          ) : null}
-
-          <NotificationBell />
-          <ThemeToggle />
+        <div className="ag-nav-tools">
+          <div className="ag-nav-notifications"><NotificationBell /></div>
+          <div className="ag-nav-theme"><ThemeToggle /></div>
 
           {!isAuthenticated ? (
             <>
               <NavLink to="/login" className={getLinkClasses}>
-                Login
+                <NavLabel>Login</NavLabel>
               </NavLink>
-              <NavLink to="/register" className={getLinkClasses}>
-                Register
+              <NavLink to="/register" className="ag-nav-cta">
+                Get started
               </NavLink>
             </>
           ) : (
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              className="ag-nav-cta"
             >
               Logout
             </button>
           )}
+        </div>
         </div>
       </div>
     </header>

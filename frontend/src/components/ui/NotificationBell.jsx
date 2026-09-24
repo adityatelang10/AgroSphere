@@ -60,6 +60,7 @@ export default function NotificationBell() {
           }}
           className="relative inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/90 p-2.5 text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
           aria-label="Open notifications"
+          aria-expanded={isOpen}
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
             <path
