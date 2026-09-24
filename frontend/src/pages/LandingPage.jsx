@@ -6,7 +6,7 @@ import { ProblemSection, JourneySection, PlatformStatsSection } from "../compone
 import { CropIntelligenceSection, DiseaseSection, IrrigationSection } from "../components/landing/IntelligenceSections";
 import DecisionEngineSection from "../components/landing/DecisionEngineSection";
 import { MarketSection, MarketplaceSection, TraceabilitySection } from "../components/landing/CommerceSections";
-import { ArchitectureSection, UserTypesSection, FinalCTA, LandingFooter } from "../components/landing/ClosingSections";
+import { UserTypesSection, FinalCTA, LandingFooter } from "../components/landing/ClosingSections";
 import "../styles/landing.css";
 
 export default function LandingPage() {
@@ -30,7 +30,7 @@ export default function LandingPage() {
       <ProblemSection /><JourneySection /><PlatformStatsSection />
       <CropIntelligenceSection /><DiseaseSection /><IrrigationSection />
       <DecisionEngineSection /><MarketSection /><MarketplaceSection /><TraceabilitySection />
-      <ArchitectureSection /><UserTypesSection /><FinalCTA />
+      <UserTypesSection /><FinalCTA />
     </main>
     <LandingFooter motionPaused={motionPaused} onToggleMotion={() => setMotionPaused((paused) => !paused)} />
   </div>;

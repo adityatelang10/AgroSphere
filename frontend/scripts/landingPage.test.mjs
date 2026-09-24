@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { clampProgress, getLandingMotionPolicy, journeyProgress } from "../src/utils/landingMotion.js";
+import { clampProgress, decisionSequenceTiming, getLandingMotionPolicy, journeyProgress, nextNavbarState } from "../src/utils/landingMotion.js";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const desktop = { reducedMotion: false, pointerFine: true, width: 1440, paused: false };
@@ -53,9 +53,62 @@ test("landing presentation has no API or ML-service calls", () => {
 });
 
 test("examples and technology boundaries are explicitly labelled", () => {
-  for (const phrase of ["Illustrative planning result", "Model confidence", "Confidence is not disease severity", "not a live model check", "not a machine-learning model", "not probability or confidence", "Maize recommendation does not replace an existing Tomato crop", "Daily wholesale reporting", "No live price feed", "not a scannable QR", "not blockchain or external certification", "Payments use Razorpay test mode"]) {
+  for (const phrase of ["Illustrative planning result", "Model confidence", "Confidence is not disease severity", "not a live model check", "not a machine-learning model", "not probability or confidence", "Maize recommendation does not replace an existing Tomato crop", "Daily wholesale reporting", "No live price feed", "not a scannable QR", "not blockchain or external certification"]) {
     assert.ok(source.toLowerCase().includes(phrase.toLowerCase()), `Missing explanation: ${phrase}`);
   }
+});
+
+test("technical architecture is removed without leaving a dead About link", () => {
+  assert.doesNotMatch(source + read("src/pages/LandingPage.jsx"), /ArchitectureSection|Purposeful parts\.|lp-architecture|lp-arch-/);
+  assert.doesNotMatch(read("src/styles/landing.css"), /\.lp-(?:architecture|arch-|integrations)/);
+  assert.match(source, /<footer id="about"/);
+  assert.match(source, /\["About", "#about"\]/);
+});
+
+test("navbar hides after deliberate downward movement and returns after a small upward scroll", () => {
+  let state = { previousY: 150, direction: 0, distance: 0, hidden: false };
+  state = nextNavbarState(state, 160);
+  assert.equal(state.hidden, false);
+  state = nextNavbarState(state, 166);
+  assert.equal(state.hidden, true);
+  state = nextNavbarState(state, 163);
+  assert.equal(state.hidden, true);
+  state = nextNavbarState(state, 160);
+  assert.equal(state.hidden, false);
+});
+
+test("navbar ignores tiny directional jitter and stays visible at the top or while locked", () => {
+  let state = { previousY: 200, direction: 0, distance: 0, hidden: true };
+  for (const position of [199, 200, 199, 200, 199, 200]) {
+    state = nextNavbarState(state, position);
+    assert.equal(state.hidden, true);
+  }
+  assert.equal(nextNavbarState(state, 75).hidden, false);
+  assert.equal(nextNavbarState(state, -20).previousY, 0);
+  assert.equal(nextNavbarState(state, 400, true).hidden, false);
+});
+
+test("decision timing separates all evidence, convergence, core and result", () => {
+  for (const compact of [false, true]) {
+    const timing = decisionSequenceTiming(compact);
+    assert.ok(timing.convergence >= timing.step * 5 + timing.evidenceDuration);
+    assert.ok(timing.core >= timing.convergence + timing.connectionDuration + 5 * 45);
+    assert.ok(timing.decision >= timing.core + timing.coreDuration);
+  }
+  assert.ok(decisionSequenceTiming(true).decision < decisionSequenceTiming(false).decision);
+});
+
+test("decision and passport sequences have dedicated triggers, with finite scan animation", () => {
+  assert.equal((source.match(/data-evidence>/g) || []).length, 6);
+  assert.match(source, /data-decision-map/);
+  assert.match(source, /data-trace-passport/);
+  assert.match(source, /lp-passport-scan/);
+  assert.match(source, /lp-passport-connection/);
+  const motion = read("src/hooks/useLandingMotion.js");
+  assert.match(motion, /is-sequenced/);
+  assert.doesNotMatch(motion, /setInterval|iterations:\s*Infinity|preventDefault/);
+  assert.match(motion, /observer\?\.disconnect\(\)/);
+  assert.match(motion, /animations\.forEach\(\(animation\) => animation\.cancel\(\)\)/);
 });
 
 test("interactive gallery and menu expose keyboard-accessible controls", () => {

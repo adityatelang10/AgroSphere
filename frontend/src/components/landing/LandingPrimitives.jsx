@@ -1,15 +1,16 @@
 import { Link } from "react-router-dom";
+import NavbarBrand, { BrandMark } from "../layout/NavbarBrand";
 
 export function Arrow({ diagonal = false, ...props }) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" {...props}><path d={diagonal ? "M5 19 19 5M5 5h14v14" : "M4 12h16m-6-6 6 6-6 6"} /></svg>;
 }
 
 export function Mark() {
-  return <svg className="lp-mark" viewBox="0 0 36 36" fill="none" aria-hidden="true"><path d="M18 30V14M18 23C7 23 5 15 5 6c10 0 13 7 13 17Zm0-5C18 8 25 5 32 5c0 9-5 13-14 13Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" /></svg>;
+  return <BrandMark className="lp-mark" />;
 }
 
 export function Wordmark() {
-  return <Link className="lp-wordmark" to="/" aria-label="AgroSphere home"><Mark /><span>AgroSphere<span className="lp-brand-dot">.</span></span></Link>;
+  return <NavbarBrand className="lp-wordmark" />;
 }
 
 export function SectionLabel({ number, children, light = false }) {
