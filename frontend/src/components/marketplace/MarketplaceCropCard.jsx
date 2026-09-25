@@ -25,11 +25,11 @@ export default function MarketplaceCropCard({ crop, index, userRole, onAddToCart
       delay={(index % 4) * 60}
       className="h-full"
     >
-      <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md focus-within:-translate-y-0.5 focus-within:border-emerald-300 focus-within:shadow-md motion-reduce:transform-none dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-emerald-900 dark:focus-within:border-emerald-800">
+      <article className="marketplace-card group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md focus-within:-translate-y-0.5 focus-within:border-emerald-300 focus-within:shadow-md motion-reduce:transform-none dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-emerald-900 dark:focus-within:border-emerald-800">
       <Link
         to={`/crop/${crop._id}`}
         aria-label={`View details for ${crop.name}`}
-        className="block h-40 overflow-hidden bg-gradient-to-br from-emerald-100 via-lime-50 to-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800"
+        className="marketplace-card-image block h-40 overflow-hidden bg-gradient-to-br from-emerald-100 via-lime-50 to-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800"
       >
         <CropImage
           src={getCropImages(crop)[0]?.url}
@@ -38,8 +38,8 @@ export default function MarketplaceCropCard({ crop, index, userRole, onAddToCart
         />
       </Link>
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <div className="flex items-start justify-between gap-3">
+      <div className="marketplace-card-body flex flex-1 flex-col gap-3 p-4">
+        <div className="marketplace-card-heading flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="font-display text-lg font-semibold text-slate-950 dark:text-slate-50">
               <Link
@@ -61,11 +61,11 @@ export default function MarketplaceCropCard({ crop, index, userRole, onAddToCart
           ) : null}
         </div>
 
-        <p className="line-clamp-2 text-sm leading-5 text-slate-600 dark:text-slate-300">
+        <p className="marketplace-card-description line-clamp-2 text-sm leading-5 text-slate-600 dark:text-slate-300">
           {crop.description}
         </p>
 
-        <div className="mt-auto grid grid-cols-[1fr,auto] items-end gap-3 border-y border-slate-100 py-3 dark:border-slate-800">
+        <div className="marketplace-card-stats mt-auto grid grid-cols-[1fr,auto] items-end gap-3 border-y border-slate-100 py-3 dark:border-slate-800">
           <div>
             <p className="text-[0.7rem] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
               Price
@@ -84,7 +84,7 @@ export default function MarketplaceCropCard({ crop, index, userRole, onAddToCart
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="marketplace-card-actions flex items-center justify-between gap-3">
           <Link
             to={`/farmer/${crop.farmer?._id}`}
             className="min-w-0 truncate text-xs font-medium text-slate-500 underline-offset-4 transition hover:text-emerald-700 hover:underline focus:outline-none focus-visible:underline dark:text-slate-400 dark:hover:text-emerald-300"

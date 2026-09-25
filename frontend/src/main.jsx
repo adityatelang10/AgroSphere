@@ -7,6 +7,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import "./index.css";
+import "./styles/mobile.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

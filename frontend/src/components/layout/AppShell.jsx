@@ -11,7 +11,7 @@ export default function AppShell() {
     <div className="min-h-screen bg-hero-grid">
       <TopNav />
 
-      <main className="mx-auto min-h-[calc(100vh-88px)] max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="ag-app-main mx-auto min-h-[calc(100vh-88px)] max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <ScrollReveal key={location.pathname} className="min-w-0">
           <Outlet />
         </ScrollReveal>

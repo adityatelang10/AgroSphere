@@ -173,7 +173,7 @@ export default function FarmerDashboardPage() {
 
   if (!dashboard) {
     return (
-      <div className="space-y-6">
+      <div className="ag-dashboard space-y-6">
         <section className="rounded-[2rem] border border-rose-200 bg-rose-50 p-8 dark:border-rose-900/50 dark:bg-rose-950/30">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-700 dark:text-rose-300">
             Farmer Intelligence Dashboard
@@ -217,7 +217,7 @@ export default function FarmerDashboardPage() {
   } = dashboard;
 
   return (
-    <div className="space-y-6">
+    <div className="ag-dashboard space-y-6">
       <ScrollReveal
         as="section"
         className="overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-5 shadow-lg dark:border-emerald-950 dark:from-emerald-950/50 dark:via-slate-950 dark:to-lime-950/30 sm:p-6"
