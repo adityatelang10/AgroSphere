@@ -10,6 +10,7 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "check": "node --check src/index.js",
+    "test:password-recovery": "node --test --test-isolation=none tests/passwordReset*.test.js",
     "test:decision": "node --test tests/decisionEngineService.test.js",
     "test:dashboard": "node --test tests/intelligenceDashboardService.test.js",
     "test:copilot": "node --test --test-isolation=none tests/geminiService.test.js",
@@ -40,6 +41,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
     "multer": "^1.4.5-lts.1",
+    "nodemailer": "^10.0.10",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {

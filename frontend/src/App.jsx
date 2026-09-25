@@ -6,6 +6,7 @@ import GuestRoute from "./components/routing/GuestRoute";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import PasswordRecoveryPage from "./pages/auth/PasswordRecoveryPage";
 import OrdersPage from "./pages/customer/OrdersPage";
 import CartPage from "./pages/customer/CartPage";
 import FarmerCropsPage from "./pages/farmer/FarmerCropsPage";
@@ -43,6 +44,9 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
+
+        <Route path="/forgot-password" element={<PasswordRecoveryPage key="forgot" />} />
+        <Route path="/reset-password" element={<PasswordRecoveryPage key="reset" reset />} />
 
         <Route path="/marketplace" element={<MarketplacePage />} />
         <Route path="/crop/:id" element={<CropDetailsPage />} />

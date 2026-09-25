@@ -89,6 +89,11 @@ const userSchema = new mongoose.Schema(
       required: [true, "Role is required"],
       index: true,
     },
+    // A successful reset increments this value to invalidate older sessions.
+    // Existing users and cookies without a version remain compatible with 0.
+    authVersion: { type: Number, default: 0 },
+    passwordResetTokenHash: { type: String, select: false },
+    passwordResetExpiresAt: { type: Date, select: false },
     deliveryAddress: {
       type: deliveryAddressSchema,
       default: undefined,
@@ -103,6 +108,9 @@ const userSchema = new mongoose.Schema(
     toJSON: {
       transform: (doc, ret) => {
         delete ret.password;
+        delete ret.authVersion;
+        delete ret.passwordResetTokenHash;
+        delete ret.passwordResetExpiresAt;
         delete ret.__v;
         return ret;
       },

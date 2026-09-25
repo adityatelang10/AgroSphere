@@ -167,6 +167,14 @@ describe("Socket cookie authentication and notification isolation", { concurrenc
     await expectRejected(makeClient(tokenFor(CUSTOMER_A)));
   });
 
+  test("a password reset rejects the previous session on HTTP and socket reconnect", async () => {
+    const oldToken = tokenFor(CUSTOMER_A);
+    users.get(CUSTOMER_A).authVersion = 1;
+    await expectRejected(makeClient(oldToken));
+    const response = await fetch(`${baseUrl}/session`, { headers: { Cookie: `token=${oldToken}` } });
+    assert.equal(response.status, 401);
+  });
+
   test("database failures do not expose internal details", async (t) => {
     t.mock.method(User, "findById", async () => { throw new Error("private database detail"); });
     await expectRejected(makeClient(tokenFor(CUSTOMER_A)));

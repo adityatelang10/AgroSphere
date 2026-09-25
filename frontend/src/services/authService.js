@@ -24,6 +24,14 @@ export function getCurrentUser() {
   return apiRequest("/api/auth/me");
 }
 
+export function requestPasswordReset(email) {
+  return apiRequest("/api/auth/forgot-password", { method: "POST", body: { email } });
+}
+
+export function resetPassword(payload) {
+  return apiRequest("/api/auth/reset-password", { method: "POST", body: payload });
+}
+
 export function updateDeliveryAddress(payload) {
   return apiRequest("/api/auth/me/delivery-address", {
     method: "PATCH",

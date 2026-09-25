@@ -8,7 +8,11 @@ const getUserFromToken = async (token) => {
   }
 
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  return User.findById(decoded.userId);
+  const user = await User.findById(decoded.userId);
+  if (!user || (decoded.authVersion || 0) !== (user.authVersion || 0)) {
+    return null;
+  }
+  return user;
 };
 
 module.exports = { getUserFromToken };

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
+import PasswordInput from "../../components/ui/PasswordInput";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -80,20 +81,27 @@ export default function LoginPage() {
           {fieldErrors.email && <p className="mt-1 text-sm text-rose-600 dark:text-rose-400">{fieldErrors.email}</p>}
         </label>
 
-        <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+        <div className="block">
+          <label htmlFor="login-password" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             Password
-          </span>
-          <input
+          </label>
+          <PasswordInput
+            id="login-password"
             name="password"
-            type="password"
+            autoComplete="current-password"
             value={formState.password}
             onChange={handleChange}
             required
             className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           />
           {fieldErrors.password && <p className="mt-1 text-sm text-rose-600 dark:text-rose-400">{fieldErrors.password}</p>}
-        </label>
+        </div>
+
+        <div className="text-right">
+          <Link to="/forgot-password" className="text-sm font-medium text-emerald-700 hover:underline focus-visible:outline-emerald-500 dark:text-emerald-400">
+            Forgot password?
+          </Link>
+        </div>
 
         {error ? (
           <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
