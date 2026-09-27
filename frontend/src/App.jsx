@@ -27,6 +27,7 @@ import NotFoundPage from "./pages/shared/NotFoundPage";
 import PublicTraceabilityPage from "./pages/traceability/PublicTraceabilityPage";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
+const MessagesPage = lazy(() => import("./pages/messages/MessagesPage"));
 
 export default function App() {
   return (
@@ -55,6 +56,7 @@ export default function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/messages" element={<Suspense fallback={<p role="status">Loading messages…</p>}><MessagesPage /></Suspense>} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["CUSTOMER"]} />}>

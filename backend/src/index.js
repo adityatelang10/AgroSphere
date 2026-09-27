@@ -10,6 +10,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const { Server } = require("socket.io");
 const { configureSocketAuthentication } = require("./middleware/socketAuthMiddleware");
+const { configureConversationSocket } = require("./services/conversationSocket");
+const { createConversationRouter } = require("./routes/conversationRoutes");
 
 const authRoutes = require("./routes/authRoutes");
 const aiRoutes = require("./routes/aiRoutes");
@@ -37,6 +39,7 @@ const io = new Server(server, {
 });
 
 configureSocketAuthentication(io);
+configureConversationSocket(io);
 app.set("io", io);
 
 app.use(
@@ -50,6 +53,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRoutes);
+app.use("/api/conversations", createConversationRouter());
 app.use("/api/ai", aiRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/crops", cropRoutes);

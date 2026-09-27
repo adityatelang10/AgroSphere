@@ -4,6 +4,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import NotificationBell from "../ui/NotificationBell";
+import MessagesNavLink from "../messages/MessagesNavLink";
 import ThemeToggle from "../ui/ThemeToggle";
 import NavbarBrand from "./NavbarBrand";
 import useNavbarScroll from "../../hooks/useNavbarScroll";
@@ -209,6 +210,7 @@ export default function TopNav() {
         </nav>
 
         <div className="ag-nav-tools">
+          {isAuthenticated ? <MessagesNavLink /> : null}
           <div className="ag-nav-notifications"><NotificationBell /></div>
           <div className="ag-nav-theme"><ThemeToggle /></div>
 

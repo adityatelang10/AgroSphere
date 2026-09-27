@@ -6,6 +6,7 @@ import { getPublicFarmerProfile } from "../../services/farmerProfileService";
 import CropImageGallery from "../../components/marketplace/CropImageGallery";
 import CropImage from "../../components/marketplace/CropImage";
 import RatingSummary from "../../components/marketplace/RatingSummary";
+import MessageFarmerButton from "../../components/messages/MessageFarmerButton";
 import { getCropImages } from "../../utils/cropImages";
 import { formatCurrency } from "../../utils/formatters";
 
@@ -81,6 +82,7 @@ export default function FarmerProfilePage() {
         </p>
 
         <div className="mt-6 flex flex-wrap gap-4">
+          <MessageFarmerButton farmerProfileId={farmer._id} />
           <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
               Average Rating

@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { io } from "socket.io-client";
-
-const SOCKET_URL = import.meta.env.VITE_API_SOCKET_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+import { acquireRealtimeConnection } from "../services/realtimeConnection";
 
 const MAX_NOTIFICATIONS = 20;
 
@@ -28,10 +26,8 @@ export function useNotifications(userId, { enabled = true } = {}) {
       return undefined;
     }
 
-    const socket = io(SOCKET_URL, {
-      transports: ["websocket"],
-      withCredentials: true,
-    });
+    const { socket, release } = acquireRealtimeConnection(userId);
+    setIsConnected(socket.connected);
 
     socketRef.current = socket;
 
@@ -55,18 +51,18 @@ export function useNotifications(userId, { enabled = true } = {}) {
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleDisconnect);
-    socket.on("orderPlaced", (payload) => pushNotification("orderPlaced", payload));
-    socket.on("orderStatusUpdated", (payload) =>
-      pushNotification("orderStatusUpdated", payload)
-    );
+    const onPlaced = (payload) => pushNotification("orderPlaced", payload);
+    const onUpdated = (payload) => pushNotification("orderStatusUpdated", payload);
+    socket.on("orderPlaced", onPlaced);
+    socket.on("orderStatusUpdated", onUpdated);
 
     return () => {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
       socket.off("connect_error", handleDisconnect);
-      socket.off("orderPlaced");
-      socket.off("orderStatusUpdated");
-      socket.disconnect();
+      socket.off("orderPlaced", onPlaced);
+      socket.off("orderStatusUpdated", onUpdated);
+      release();
       socketRef.current = null;
     };
   }, [enabled, userId]);

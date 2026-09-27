@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 import CropImageGallery from "../../components/marketplace/CropImageGallery";
+import MessageFarmerButton from "../../components/messages/MessageFarmerButton";
 import RatingSummary, { RatingStars } from "../../components/marketplace/RatingSummary";
 import { useCart } from "../../context/CartContext";
 import { getCropById } from "../../services/cropService";
@@ -152,6 +153,7 @@ export default function CropDetailsPage() {
         ) : null}
 
         <div className="flex flex-wrap gap-3">
+          <MessageFarmerButton farmerProfileId={crop.farmer?._id} cropId={crop._id}>Chat with Farmer</MessageFarmerButton>
           <Link
             to={`/farmer/${crop.farmer?._id}`}
             className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-amber-400 hover:text-amber-700 dark:border-slate-700 dark:text-slate-200"

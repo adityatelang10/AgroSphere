@@ -6,6 +6,7 @@ import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { ChatProvider } from "./context/ChatContext";
 import "./index.css";
 import "./styles/mobile.css";
 
@@ -15,7 +16,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <ThemeProvider>
         <AuthProvider>
           <CartProvider>
-            <App />
+            <ChatProvider><App /></ChatProvider>
           </CartProvider>
         </AuthProvider>
       </ThemeProvider>

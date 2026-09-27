@@ -6,18 +6,19 @@ import TopNav from "./TopNav";
 
 export default function AppShell() {
   const location = useLocation();
+  const isMessages = location.pathname === "/messages";
 
   return (
     <div className="min-h-screen bg-hero-grid">
       <TopNav />
 
-      <main className="ag-app-main mx-auto min-h-[calc(100vh-88px)] max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <ScrollReveal key={location.pathname} className="min-w-0">
+      <main className={`ag-app-main mx-auto min-h-[calc(100vh-88px)] max-w-7xl px-4 py-8 sm:px-6 lg:px-8${isMessages ? " ag-messages-main" : ""}`}>
+        {isMessages ? <Outlet /> : <ScrollReveal key={location.pathname} className="min-w-0">
           <Outlet />
-        </ScrollReveal>
+        </ScrollReveal>}
       </main>
 
-      <GeminiChatWidget />
+      {!isMessages ? <GeminiChatWidget /> : null}
     </div>
   );
 }
