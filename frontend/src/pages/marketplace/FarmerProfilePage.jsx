@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import UserAvatar from "../../components/profile/UserAvatar";
-import { listCrops } from "../../services/cropService";
+import { getPublicFarmerProfile } from "../../services/farmerProfileService";
+import CropImageGallery from "../../components/marketplace/CropImageGallery";
+import CropImage from "../../components/marketplace/CropImage";
+import RatingSummary from "../../components/marketplace/RatingSummary";
+import { getCropImages } from "../../utils/cropImages";
 import { formatCurrency } from "../../utils/formatters";
 
 export default function FarmerProfilePage() {
@@ -13,26 +17,26 @@ export default function FarmerProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     const loadFarmerProfile = async () => {
       setIsLoading(true);
       setError("");
 
       try {
-        const response = await listCrops();
-        const farmerCrops = (response.crops || []).filter(
-          (crop) => crop.farmer?._id === id
-        );
-
-        setCrops(farmerCrops);
-        setFarmer(farmerCrops[0]?.farmer || null);
+        const response = await getPublicFarmerProfile(id);
+        if (active) {
+          setCrops(response.crops || []);
+          setFarmer(response.profile || null);
+        }
       } catch (requestError) {
-        setError(requestError.message || "Failed to load farmer profile");
+        if (active) setError(requestError.message || "Failed to load farmer profile");
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
     };
 
     loadFarmerProfile();
+    return () => { active = false; };
   }, [id]);
 
   if (isLoading) {
@@ -60,19 +64,19 @@ export default function FarmerProfilePage() {
             imageUrl={farmer.user?.profileImage?.url}
             className="h-20 w-20 text-xl ring-4 ring-emerald-100 dark:ring-emerald-950"
           />
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">
               Farmer Profile
             </p>
-            <h1 className="mt-2 font-display text-4xl font-bold text-slate-950 dark:text-slate-50">
+            <h1 className="mt-2 break-words font-display text-3xl font-bold text-slate-950 dark:text-slate-50 sm:text-4xl">
               {farmer.farmName}
             </h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {farmer.user?.name ? `${farmer.user.name} · ` : ""}{farmer.location?.district}, {farmer.location?.state}
+              {farmer.user?.name ? `${farmer.user.name} · ` : ""}{[farmer.location?.district, farmer.location?.state].filter(Boolean).join(", ")}
             </p>
           </div>
         </div>
-        <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-300">
+        <p className="mt-5 max-w-3xl whitespace-pre-wrap break-words text-sm leading-7 text-slate-600 dark:text-slate-300">
           {farmer.bio || "This farmer has not added a detailed profile bio yet."}
         </p>
 
@@ -82,7 +86,7 @@ export default function FarmerProfilePage() {
               Average Rating
             </p>
             <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-slate-50">
-              {farmer.averageRating || 0} / 5
+              <RatingSummary averageRating={farmer.averageRating} totalReviews={farmer.totalReviews} />
             </p>
           </div>
           <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
@@ -96,8 +100,18 @@ export default function FarmerProfilePage() {
         </div>
       </section>
 
+      <section className="min-w-0 space-y-4 rounded-3xl border border-white/60 bg-white/85 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/75 sm:p-6">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">A look around the farm</p>
+          <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">Farm gallery</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Photos shared by the farmer.</p>
+        </div>
+        {farmer.gallery?.length ? <CropImageGallery key={farmer._id} crop={{ name: farmer.farmName, images: farmer.gallery }} />
+          : <p className="text-sm text-slate-500 dark:text-slate-400">This farmer has not shared farm photos yet.</p>}
+      </section>
+
       <section>
-        <div className="mb-5 flex items-center justify-between">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.24em] text-amber-700 dark:text-amber-400">
               Available Listings
@@ -111,28 +125,32 @@ export default function FarmerProfilePage() {
           </span>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="farmer-profile-crops grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {crops.map((crop) => (
             <article
               key={crop._id}
-              className="rounded-[1.8rem] border border-white/60 bg-white/85 p-5 shadow-lg dark:border-slate-800 dark:bg-slate-950/75"
+              className="flex min-w-0 flex-col rounded-2xl border border-white/60 bg-white/85 p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950/75 sm:p-3"
             >
-              <h3 className="font-display text-xl font-semibold text-slate-950 dark:text-slate-50">
+              <Link to={`/crop/${crop._id}`} aria-label={`View ${crop.name}`} className="mb-2 block h-[170px] shrink-0 overflow-hidden rounded-xl">
+                <CropImage src={getCropImages(crop)[0]?.url} alt={crop.name} className="h-full w-full object-cover" />
+              </Link>
+              <h3 title={crop.name} className="line-clamp-2 break-words font-display text-base font-semibold leading-5 text-slate-950 dark:text-slate-50">
                 {crop.name}
               </h3>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              <div className="mt-1 min-w-0"><RatingSummary averageRating={crop.averageRating} totalReviews={crop.totalReviews} /></div>
+              <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400" title={`${crop.category} | ${crop.season}`}>
                 {crop.category} | {crop.season}
               </p>
-              <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              <p className="mt-2 line-clamp-2 break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
                 {crop.description}
               </p>
-              <div className="mt-5 flex items-center justify-between">
-                <p className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+              <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
+                <p className="min-w-0 break-words text-sm font-semibold text-slate-950 dark:text-slate-50">
                   {formatCurrency(crop.price)} / {crop.unit}
                 </p>
                 <Link
                   to={`/crop/${crop._id}`}
-                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700 dark:border-slate-700 dark:text-slate-200"
+                  className="inline-flex min-h-8 items-center justify-center rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500 dark:border-slate-700 dark:text-slate-200"
                 >
                   View crop
                 </Link>
@@ -140,6 +158,7 @@ export default function FarmerProfilePage() {
             </article>
           ))}
         </div>
+        {!crops.length ? <p className="text-sm text-slate-500 dark:text-slate-400">No active crop listings at the moment.</p> : null}
       </section>
     </div>
   );

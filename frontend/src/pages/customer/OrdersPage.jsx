@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import { getMyOrders } from "../../services/orderService";
+import { getMyReviews } from "../../services/reviewService";
+import OrderItemReview from "../../components/marketplace/OrderItemReview";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 
 export default function OrdersPage() {
@@ -9,6 +11,19 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewError, setReviewError] = useState("");
+
+  const loadReviews = async () => {
+    setReviewsLoading(true);
+    setReviewError("");
+    try { setReviews((await getMyReviews()).reviews || []); }
+    catch (requestError) { setReviewError(requestError.message || "Could not load your reviews."); }
+    finally { setReviewsLoading(false); }
+  };
+
+  useEffect(() => { loadReviews(); }, []);
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -108,6 +123,16 @@ export default function OrdersPage() {
                         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                           {formatCurrency(item.priceAtOrder)} / {item.crop?.unit || "unit"}
                         </p>
+                        {order.status === "Delivered" && item.crop?._id ? (
+                          reviewsLoading ? <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading review options...</p>
+                            : reviewError ? <p className="mt-3 text-sm text-rose-700 dark:text-rose-300">{reviewError} <button type="button" className="underline" onClick={loadReviews}>Retry reviews</button></p>
+                              : <OrderItemReview
+                                orderId={order._id}
+                                crop={item.crop}
+                                review={reviews.find((review) => review.orderId === order._id && review.cropId === item.crop._id)}
+                                onSaved={(saved) => setReviews((current) => [...current.filter((review) => review._id !== saved._id), saved])}
+                              />
+                        ) : null}
                       </div>
                     ))}
                   </div>

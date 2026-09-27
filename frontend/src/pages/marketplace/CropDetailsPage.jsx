@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 import CropImageGallery from "../../components/marketplace/CropImageGallery";
+import RatingSummary, { RatingStars } from "../../components/marketplace/RatingSummary";
 import { useCart } from "../../context/CartContext";
 import { getCropById } from "../../services/cropService";
 import { getCropReviews } from "../../services/reviewService";
@@ -17,19 +18,27 @@ export default function CropDetailsPage() {
   const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reviewError, setReviewError] = useState("");
 
   useEffect(() => {
     const loadCropDetails = async () => {
       setIsLoading(true);
       setError("");
+      setReviewError("");
 
       try {
         const [cropResponse, reviewResponse] = await Promise.all([
           getCropById(id),
-          getCropReviews(id).catch(() => ({ reviews: [] })),
+          getCropReviews(id).catch(() => {
+            setReviewError("Reviews are temporarily unavailable.");
+            return { reviews: [] };
+          }),
         ]);
 
-        setCrop(cropResponse.crop);
+        setCrop({ ...cropResponse.crop, ...(reviewResponse.crop ? {
+          averageRating: reviewResponse.crop.averageRating,
+          totalReviews: reviewResponse.crop.totalReviews,
+        } : {}) });
         setReviews(reviewResponse.reviews || []);
       } catch (requestError) {
         setError(requestError.message || "Failed to load crop details");
@@ -116,7 +125,7 @@ export default function CropDetailsPage() {
               Rating
             </p>
             <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-slate-50">
-              {crop.averageRating || 0} / 5
+              {reviewError ? "Unavailable" : <RatingSummary averageRating={crop.averageRating} totalReviews={crop.totalReviews} />}
             </p>
           </div>
         </div>
@@ -172,7 +181,7 @@ export default function CropDetailsPage() {
             Farmer
           </p>
           <h2 className="mt-3 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">
-            {crop.farmer?.farmName || "Farm profile"}
+            <Link to={`/farmer/${crop.farmer?._id}`} className="hover:text-emerald-700 hover:underline dark:hover:text-emerald-300">{crop.farmer?.user?.name || crop.farmer?.farmName || "Farm profile"}</Link>
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
             {crop.farmer?.bio || "Farmer bio will appear here once the profile flow is completed."}
@@ -195,9 +204,9 @@ export default function CropDetailsPage() {
           </div>
 
           <div className="mt-5 space-y-4">
-            {reviews.length === 0 ? (
+            {reviewError ? <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{reviewError}</p> : reviews.length === 0 ? (
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                No reviews yet. Delivered orders can add ratings here.
+                No reviews yet. Customers can write a review from their delivered order in Orders.
               </p>
             ) : (
               reviews.map((review) => (
@@ -205,7 +214,7 @@ export default function CropDetailsPage() {
                   key={review._id}
                   className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-900"
                 >
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       {review.customer?.name || "Customer"}
                     </p>
@@ -213,12 +222,12 @@ export default function CropDetailsPage() {
                       {formatDate(review.createdAt)}
                     </p>
                   </div>
-                  <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
-                    Rating:{" "}
-                    <span className="text-slate-500 dark:text-slate-400">{review.rating}/5</span>
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <RatingStars rating={review.rating} />
+                    {review.verifiedPurchase ? <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Verified Purchase</span> : null}
+                  </div>
                   {review.comment ? (
-                    <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
                       {review.comment}
                     </p>
                   ) : null}

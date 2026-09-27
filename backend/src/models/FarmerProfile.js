@@ -41,8 +41,19 @@ const farmerProfileSchema = new mongoose.Schema(
     bio: {
       type: String,
       trim: true,
-      maxlength: [1000, "Bio cannot exceed 1000 characters"],
+      maxlength: [500, "Bio cannot exceed 500 characters"],
       default: "",
+    },
+    gallery: {
+      type: [new mongoose.Schema({
+        url: { type: String, required: true },
+        publicId: { type: String, required: true },
+      })],
+      default: [],
+      validate: {
+        validator: (images) => images.length <= 8,
+        message: "A farm gallery can contain at most 8 images",
+      },
     },
     averageRating: {
       type: Number,

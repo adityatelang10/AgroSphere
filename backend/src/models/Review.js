@@ -25,7 +25,11 @@ const reviewSchema = new mongoose.Schema(
       required: [true, "Rating is required"],
       min: [1, "Rating must be at least 1"],
       max: [5, "Rating cannot be more than 5"],
+      validate: { validator: Number.isInteger, message: "Rating must be an integer" },
     },
+    // Optional on legacy records; every new review derives this from its purchase.
+    farmer: { type: mongoose.Schema.Types.ObjectId, ref: "FarmerProfile", index: true },
+    verifiedPurchase: { type: Boolean, default: false },
     comment: {
       type: String,
       trim: true,
@@ -42,7 +46,7 @@ const reviewSchema = new mongoose.Schema(
   {
     timestamps: {
       createdAt: true,
-      updatedAt: false,
+      updatedAt: true,
     },
   }
 );

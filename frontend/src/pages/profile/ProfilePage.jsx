@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import UserAvatar from "../../components/profile/UserAvatar";
+import FarmGalleryManager from "../../components/profile/FarmGalleryManager";
+import FarmerBioEditor from "../../components/profile/FarmerBioEditor";
 import { useAuth } from "../../context/AuthContext";
 import {
   getOwnFarmerProfile,
@@ -326,13 +328,17 @@ export default function ProfilePage() {
               <dl className="mt-5 grid gap-5 sm:grid-cols-2">
                 <Detail label="Farm name" value={farmerProfile?.farmName} />
                 <Detail label="Location" value={farmLocation} />
-                <div className="sm:col-span-2">
-                  <Detail label="Farm bio" value={farmerProfile?.bio} />
-                </div>
               </dl>
             )}
+            {!isProfileLoading && !profileError && farmerProfile ? (
+              <FarmerBioEditor
+                key={farmerProfile._id}
+                savedBio={farmerProfile.bio || ""}
+                onSaved={(bio) => setFarmerProfile((profile) => ({ ...profile, bio }))}
+              />
+            ) : null}
             <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">
-              Farm information is shown from your existing listing profile. This page does not change marketplace details.
+              Farm name and location are shown from your existing listing profile. Updating your bio does not change crop listings or gallery photos.
             </p>
           </article>
         ) : (
@@ -389,6 +395,9 @@ export default function ProfilePage() {
           </article>
         )}
       </section>
+      {isFarmer && farmerProfile ? (
+        <FarmGalleryManager profile={farmerProfile} onChange={(gallery) => setFarmerProfile((profile) => ({ ...profile, gallery }))} />
+      ) : null}
     </div>
   );
 }

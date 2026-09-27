@@ -3,7 +3,11 @@ const multer = require("multer");
 
 const {
   getOwnFarmerProfile,
+  updateFarmerBio,
   updateProfileImage,
+  getPublicFarmerProfile,
+  addGalleryImages,
+  removeGalleryImage,
 } = require("../controllers/farmerProfileController");
 const { authMiddleware, requireRole } = require("../middleware/authMiddleware");
 
@@ -51,8 +55,31 @@ const uploadSingleProfileImage = (req, res, next) => {
   });
 };
 
+const galleryUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { files: 8, fileSize: 5 * 1024 * 1024, fields: 0 },
+  fileFilter: (req, file, callback) => callback(
+    allowedMimeTypes.has(file.mimetype) ? null : new Error("Choose JPEG, PNG, or WEBP images"),
+    allowedMimeTypes.has(file.mimetype)
+  ),
+}).array("images", 8);
+
+const uploadGalleryImages = (req, res, next) => galleryUpload(req, res, (error) => {
+  if (!error) return next();
+  return res.status(400).json({
+    success: false,
+    message: error.code === "LIMIT_FILE_SIZE"
+      ? "Each gallery photo must be 5 MB or smaller"
+      : "Upload up to 8 JPEG, PNG, or WEBP images using the images field",
+  });
+});
+
+router.get("/public/:id", getPublicFarmerProfile);
 router.use(authMiddleware, requireRole("FARMER"));
 router.get("/profile", getOwnFarmerProfile);
+router.patch("/profile", updateFarmerBio);
 router.put("/profile/image", uploadSingleProfileImage, updateProfileImage);
+router.post("/profile/gallery", uploadGalleryImages, addGalleryImages);
+router.delete("/profile/gallery/:imageId", removeGalleryImage);
 
 module.exports = router;

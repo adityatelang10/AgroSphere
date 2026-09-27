@@ -6,7 +6,7 @@ export default function MobileFilterSheet({ children, onClose }) {
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    const desktop = window.matchMedia("(min-width: 640px)");
+    const desktop = window.matchMedia("(min-width: 641px)");
     if (desktop.matches) {
       onClose();
       return undefined;

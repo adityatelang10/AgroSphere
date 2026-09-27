@@ -25,11 +25,11 @@ export default function MarketplaceCropCard({ crop, index, userRole, onAddToCart
       delay={(index % 4) * 60}
       className="h-full"
     >
-      <article className="marketplace-card group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md focus-within:-translate-y-0.5 focus-within:border-emerald-300 focus-within:shadow-md motion-reduce:transform-none dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-emerald-900 dark:focus-within:border-emerald-800">
+      <article className="marketplace-card group flex h-full min-w-0 flex-col rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md focus-within:-translate-y-0.5 focus-within:border-emerald-300 focus-within:shadow-md motion-reduce:transform-none dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-emerald-900 dark:focus-within:border-emerald-800">
       <Link
         to={`/crop/${crop._id}`}
         aria-label={`View details for ${crop.name}`}
-        className="marketplace-card-image block h-40 overflow-hidden bg-gradient-to-br from-emerald-100 via-lime-50 to-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800"
+        className="marketplace-card-image block h-40 sm:h-[190px] overflow-hidden rounded-xl bg-gradient-to-br from-emerald-100 via-lime-50 to-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800"
       >
         <CropImage
           src={getCropImages(crop)[0]?.url}

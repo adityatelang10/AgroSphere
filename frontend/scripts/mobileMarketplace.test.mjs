@@ -10,15 +10,39 @@ const css = postcss.parse(read("styles/mobile.css"));
 
 test("all style overrides are restricted to phones; tablet/desktop utilities are untouched", () => {
   const rules = css.nodes.filter((node) => node.type !== "comment");
-  assert.equal(rules.length, 1);
+  assert.equal(rules.length, 2);
   assert.equal(rules[0].name, "media");
   assert.equal(rules[0].params, "(max-width: 639.98px)");
-  const grid = rules[0].nodes.find((node) => node.selector === ".marketplace-grid");
+  assert.equal(rules[1].name, "media");
+  assert.equal(rules[1].params, "(max-width: 640px)");
+  rules[1].walkRules((rule) => assert.ok(rule.selectors.every((selector) => selector.startsWith(".marketplace-")), rule.selector));
+  const grid = rules[1].nodes.find((node) => node.selector === ".marketplace-grid");
   assert.equal(grid.nodes.find((node) => node.prop === "grid-template-columns").value, "repeat(3, minmax(0, 1fr))");
   assert.equal(grid.nodes.find((node) => node.prop === "gap").value, "6px");
   const main = read("main.jsx");
   assert.ok(main.indexOf('import "./styles/mobile.css"') > main.indexOf('import "./index.css"'));
   assert.match(read("pages/marketplace/MarketplacePage.jsx"), /sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4/);
+});
+
+test("mobile images use their full card width without a capped strip height", () => {
+  const images = [];
+  css.walkRules(".marketplace-card-image", (rule) => images.push(rule));
+  assert.equal(images.length, 1);
+  assert.equal(images[0].parent.params, "(max-width: 640px)");
+  const values = Object.fromEntries(images[0].nodes.map((node) => [node.prop, node.value]));
+  assert.deepEqual(values, { width: "100%", height: "auto", "aspect-ratio": "1 / 1", "flex-shrink": "0" });
+  const card = read("components/marketplace/MarketplaceCropCard.jsx");
+  assert.match(card, /marketplace-card-image block h-40 sm:h-\[190px\] overflow-hidden rounded-xl/);
+  assert.doesNotMatch(card.match(/<article className="([^"]+)"/)?.[1] || "", /overflow-hidden/);
+  assert.match(card, /h-full w-full object-cover/);
+  assert.match(card, /marketplace-card-body flex flex-1 flex-col gap-3 p-4/);
+});
+
+test("compact public profile cards do not share Marketplace sizing hooks", () => {
+  const profile = read("pages/marketplace/FarmerProfilePage.jsx");
+  assert.doesNotMatch(profile, /MarketplaceCropCard|className="marketplace-/);
+  assert.match(profile, /farmer-profile-crops grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5/);
+  assert.match(profile, /h-\[170px\] shrink-0 overflow-hidden rounded-xl/);
 });
 
 function elements(node) {
@@ -94,6 +118,6 @@ test("mobile search uses the unchanged filter handler", async () => {
 test("sheet locks background scroll, uses native modal focus, and cleans up on close or desktop resize", () => {
   const source = read("components/marketplace/MobileFilterSheet.jsx");
   for (const text of ["dialog.showModal()", "dialog.close()", 'document.body.style.overflow = "hidden"', "document.body.style.overflow = bodyOverflow", "document.documentElement.style.overflow = rootOverflow", 'removeEventListener("change", onResize)', "previouslyFocused.focus({ preventScroll: true })", "onCancel=", "getBoundingClientRect()", 'aria-label="Close filters"']) assert.ok(source.includes(text), text);
-  assert.match(source, /min-width: 640px/);
+  assert.match(source, /min-width: 641px/);
   assert.match(source, /createPortal/);
 });
