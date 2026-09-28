@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
+import CartQuantityControl from "../../components/marketplace/CartQuantityControl";
 import {
   cancelTestPaymentAttempt,
   createTestPaymentOrder,
@@ -217,11 +218,7 @@ export default function CartPage() {
                   <h2 className="mt-1 truncate font-display text-xl font-semibold text-slate-950 dark:text-white">{item.name}</h2>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{formatCurrency(item.price)} / {item.unit}</p>
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                    <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-900">
-                      <button type="button" aria-label={`Decrease ${item.name} quantity`} disabled={item.quantity <= 1} onClick={() => updateQuantity(item.cropId, item.quantity - 1)} className="h-8 w-8 rounded-lg text-xl text-slate-600 transition hover:bg-white hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-300 dark:hover:bg-slate-800">−</button>
-                      <span className="min-w-10 px-2 text-center text-sm font-bold text-slate-900 dark:text-white">{item.quantity}</span>
-                      <button type="button" aria-label={`Increase ${item.name} quantity`} disabled={atStockLimit} onClick={() => updateQuantity(item.cropId, item.quantity + 1)} className="h-8 w-8 rounded-lg text-xl text-slate-600 transition hover:bg-white hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-300 dark:hover:bg-slate-800">+</button>
-                    </div>
+                    <CartQuantityControl item={item} onChange={updateQuantity} />
                     <button type="button" onClick={() => removeFromCart(item.cropId)} className="text-sm font-semibold text-rose-600 transition hover:text-rose-700 dark:text-rose-400">Remove</button>
                   </div>
                   {atStockLimit ? <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-400">Maximum currently available quantity reached.</p> : null}

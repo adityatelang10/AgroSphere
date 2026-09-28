@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 
 import UserAvatar from "../../components/profile/UserAvatar";
 import { getPublicFarmerProfile } from "../../services/farmerProfileService";
-import CropImageGallery from "../../components/marketplace/CropImageGallery";
+import FarmFocusGallery from "../../components/marketplace/FarmFocusGallery";
 import CropImage from "../../components/marketplace/CropImage";
 import RatingSummary from "../../components/marketplace/RatingSummary";
 import MessageFarmerButton from "../../components/messages/MessageFarmerButton";
@@ -108,7 +108,7 @@ export default function FarmerProfilePage() {
           <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-slate-50">Farm gallery</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Photos shared by the farmer.</p>
         </div>
-        {farmer.gallery?.length ? <CropImageGallery key={farmer._id} crop={{ name: farmer.farmName, images: farmer.gallery }} />
+        {farmer.gallery?.length ? <FarmFocusGallery key={farmer._id} name={farmer.farmName} images={farmer.gallery} />
           : <p className="text-sm text-slate-500 dark:text-slate-400">This farmer has not shared farm photos yet.</p>}
       </section>
 
