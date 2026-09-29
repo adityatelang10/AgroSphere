@@ -1,6 +1,46 @@
 import { useEffect } from "react";
 import { clampProgress, decisionSequenceTiming, getLandingMotionPolicy, journeyProgress, nextNavbarState } from "../utils/landingMotion";
 
+// Temporary letter layers keep the original text's kerning and final layout intact.
+export function revealFooterWord(word, animate) {
+  if (!word || word.classList.contains("is-wind-revealed")) return () => {};
+  word.classList.add("is-wind-revealed");
+  const source = word.querySelector(".lp-footer-word-source");
+  if (!source?.firstChild) return () => {};
+  const run = source.parentElement;
+  const origin = run.getBoundingClientRect().left;
+  const range = word.ownerDocument.createRange();
+  const offsets = [[-.09,.04,-3],[-.06,-.035,2],[-.1,.055,-2],[-.055,-.025,2.5],[-.085,.03,-2.5],[-.05,-.04,2],[-.075,.045,-1.5],[-.04,-.02,1.5],[-.065,.03,-2],[-.035,-.015,1],[-.025,.015,-1]];
+  const animations = [];
+  const letters = Array.from(source.textContent, (character, index) => {
+    range.setStart(source.firstChild, index);
+    range.setEnd(source.firstChild, index + 1);
+    const letter = word.ownerDocument.createElement("span");
+    letter.className = "lp-footer-wind-letter";
+    letter.textContent = character;
+    letter.style.left = `${range.getBoundingClientRect().left - origin}px`;
+    return letter;
+  });
+  // All geometry reads precede writes; no per-frame layout or scroll handlers.
+  run.append(...letters);
+  word.classList.add("is-wind-playing");
+  letters.forEach((letter, index) => {
+    const [x, y, rotation] = offsets[index % offsets.length];
+    const animation = animate(letter, [
+      { opacity:0, transform:`translate(${x}em, ${y}em) rotate(${rotation}deg)`, filter:"blur(3px)" },
+      { opacity:1, transform:"translate(0, 0) rotate(0deg)", filter:"blur(0px)" },
+    ], { duration:400, delay:index * 60, easing:"cubic-bezier(.22,.68,.25,1)" });
+    if (animation) animations.push(animation);
+  });
+  const settle = () => {
+    animations.forEach((animation) => animation.cancel());
+    letters.forEach((letter) => letter.remove());
+    word.classList.remove("is-wind-playing");
+  };
+  Promise.all(animations.map((animation) => animation.finished.catch(() => {}))).then(settle);
+  return settle;
+}
+
 // No scroll interception or React state updates per frame. Everything is scoped
 // to the landing root and cleaned up on unmount or reduced-motion changes.
 export default function useLandingMotion(rootRef, paused) {
@@ -16,6 +56,8 @@ export default function useLandingMotion(rootRef, paused) {
     const decision = root.querySelector("#decision-engine");
     const decisionMap = root.querySelector("[data-decision-map]");
     const passport = root.querySelector("[data-trace-passport]");
+    const footerWord = root.querySelector(".lp-footer-word");
+    let settleFooterWord = () => {};
     const cursor = root.querySelector(".lp-cursor");
     const reveals = [...root.querySelectorAll("[data-reveal]")];
     const media = [...root.querySelectorAll(".lp-crop-visual,.lp-leaf-composition,.lp-produce-photo,.lp-gallery-frame,.lp-journey-photo")];
@@ -234,6 +276,8 @@ export default function useLandingMotion(rootRef, paused) {
     };
 
     const configure = () => {
+      // A resize or motion preference change settles any in-flight letter layers.
+      settleFooterWord();
       const canAnimate = "IntersectionObserver" in window && typeof root.animate === "function";
       policy = getLandingMotionPolicy({ reducedMotion: reduce.matches || !canAnimate, pointerFine: fine.matches, width: innerWidth, paused });
       root.classList.toggle("lp-motion", policy.enabled);
@@ -251,6 +295,7 @@ export default function useLandingMotion(rootRef, paused) {
         media.forEach((frame) => frame.classList.add("is-media-visible"));
         decision.classList.add("is-sequenced");
         passport.classList.add("is-sequenced");
+        footerWord?.classList.add("is-wind-revealed");
         root.querySelectorAll("[data-count]").forEach((node) => { node.textContent = Number(node.dataset.count).toFixed(Number(node.dataset.decimals || 0)); });
       }
       if (!policy.cursor) {
@@ -265,13 +310,14 @@ export default function useLandingMotion(rootRef, paused) {
           const element = entry.target;
           if (element === decisionMap) revealDecision();
           else if (element === passport) revealPassport();
+          else if (element === footerWord) settleFooterWord = revealFooterWord(footerWord, animate);
           else {
             if (element.matches("[data-reveal]")) reveal(element);
             if (media.includes(element)) revealMedia(element);
           }
           observer.unobserve(element);
         }), { threshold: .12, rootMargin: "0px 0px -35px 0px" });
-        new Set([...reveals, ...media, decisionMap, passport]).forEach((element) => observer.observe(element));
+        new Set([...reveals, ...media, decisionMap, passport, ...(footerWord ? [footerWord] : [])]).forEach((element) => observer.observe(element));
       }
       scheduleScroll();
     };
@@ -287,6 +333,7 @@ export default function useLandingMotion(rootRef, paused) {
     fine.addEventListener("change", configure);
     return () => {
       stopped = true;
+      settleFooterWord();
       observer?.disconnect();
       cancelAnimationFrame(scrollFrame);
       cancelAnimationFrame(pointerFrame);

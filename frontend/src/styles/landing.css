@@ -307,6 +307,9 @@
 .lp-footer nav { display:grid; grid-template-columns:1fr 1fr; gap:20px 28px; align-content:start; font-size:16px; }
 .lp-footer nav a { width:fit-content; }
 .lp-footer-word { font-size:clamp(65px,14.5vw,225px); letter-spacing:-.08em; line-height:1.15; text-align:center; margin:55px 0 35px; color:#42603a; font-weight:500; user-select:none; }
+.lp-footer-word-run { position:relative; display:inline-block; vertical-align:top; white-space:nowrap; }
+.lp-footer-wind-letter { position:absolute; top:0; text-align:left; pointer-events:none; transform-origin:50% 65%; }
+.lp-footer-word.is-wind-playing .lp-footer-word-source { visibility:hidden; }
 .lp-footer-bottom { border-top:1px solid #74866840; display:flex; flex-wrap:wrap; justify-content:space-between; gap:18px 26px; padding-top:22px; font-size:15px; line-height:1.6; color:#bdc9b1; }
 .lp-footer-bottom a { display:flex; align-items:center; gap:7px; }
 .lp-footer-bottom svg { width:12px; height:12px; }
@@ -438,6 +441,7 @@
 .lp-motion [data-magnetic] { translate:var(--magnetic-x,0) var(--magnetic-y,0); }
 /* Hidden entry states exist only after the supported observer is installed. */
 .lp-motion.lp-reveals-ready [data-reveal]:not(.is-visible) { opacity:0; }
+.lp-motion.lp-reveals-ready .lp-footer-word:not(.is-wind-revealed) .lp-footer-word-source { visibility:hidden; }
 .lp-motion.lp-reveals-ready .lp-media-frame:not(.is-media-visible) { opacity:0; }
 .lp-motion.lp-reveals-ready .lp-decision:not(.is-sequenced) [data-evidence],
 .lp-motion.lp-reveals-ready .lp-decision:not(.is-sequenced) .lp-engine-core,
@@ -483,4 +487,6 @@
   .lp-nav { transform:none!important; }
   .lp-journey-steps li { opacity:1!important; translate:none!important; }
   .lp-produce:hover .lp-produce-caption { translate:none; }
+  .lp-footer-word .lp-footer-word-source { visibility:visible!important; }
+  .lp-footer-wind-letter { display:none; }
 }
