@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import ModuleHeader from "../../components/ui/ModuleHeader";
 import ScrollReveal from "../../components/ui/ScrollReveal";
 import IrrigationWeatherAssist from "../../components/weather/IrrigationWeatherAssist";
 import useResultReveal from "../../hooks/useResultReveal";
 import { requestIrrigationAdvice } from "../../services/irrigationService";
-import { readWeatherLocation } from "../../utils/weatherLocation";
+import { useFarmContext } from "../../context/FarmContext";
+import FarmContextSelector, { PrefillSources } from "../../components/profile/FarmContextSelector";
+import useEditablePrefill from "../../hooks/useEditablePrefill";
+import { supportedCrop, mergePrefill, localDate as getLocalDate } from "../../utils/farmContext";
 import {
   WEATHER_ASSISTED_FIELDS,
   getIrrigationWeatherSources,
@@ -85,23 +88,17 @@ const NUMERIC_FIELDS = [
   },
 ];
 
-const getLocalDate = () => {
-  const now = new Date();
-  const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-  return localTime.toISOString().slice(0, 10);
-};
-
 const initialFormState = {
-  crop: "tomato",
-  growthStage: "mid_season",
-  soilType: "silt",
+  crop: "",
+  growthStage: "",
+  soilType: "",
   soilMoisture: "",
   minimumTemperature: "",
   maximumTemperature: "",
   latitude: "",
   observationDate: getLocalDate(),
-  recentRainfall: "0",
-  forecastRainfall: "0",
+  recentRainfall: "",
+  forecastRainfall: "",
   daysSinceLastIrrigation: "",
 };
 
@@ -109,7 +106,7 @@ const initialFieldSources = {
   minimumTemperature: "manual",
   maximumTemperature: "manual",
   latitude: "manual",
-  observationDate: "manual",
+  observationDate: "system",
   recentRainfall: "manual",
   forecastRainfall: "manual",
 };
@@ -133,9 +130,11 @@ const getStressClasses = (stress) => {
 };
 
 export default function SmartIrrigationPage() {
+  const farm = useFarmContext();
   const [formState, setFormState] = useState(() => ({
     ...initialFormState,
-    latitude: readWeatherLocation()?.latitude ?? "",
+    observationDate: getLocalDate(),
+    latitude: farm?.location?.latitude ?? "",
   }));
   const [fieldErrors, setFieldErrors] = useState({});
   const [result, setResult] = useState(null);
@@ -143,12 +142,40 @@ export default function SmartIrrigationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldSources, setFieldSources] = useState(() => ({
     ...initialFieldSources,
-    latitude: readWeatherLocation() ? "saved" : "manual",
+    latitude: farm?.location ? "saved" : "manual",
   }));
   const resultRef = useResultReveal(result);
+  useEffect(() => { setResult(null); }, [formState]);
+  const { sources, markManual, dirty } = useEditablePrefill(setFormState, {
+    crop: { value: supportedCrop(farm?.selectedListing, CROP_OPTIONS.map((item) => item.value)), source: "selected active listing" },
+    latitude: { value: farm?.location?.latitude, source: farm?.locationSource },
+  });
+
+  useEffect(() => {
+    if (farm?.weather && !farm.weatherLoading) return;
+    // Coordinate changes/reloads must not pair old weather with a new location.
+    // Only untouched suggestions are invalidated; measured/manual inputs survive.
+    const fields = ["minimumTemperature", "maximumTemperature", "forecastRainfall"].filter((field) => !dirty.current[field]);
+    setFormState((current) => {
+      if (!fields.some((field) => current[field] !== "")) return current;
+      return { ...current, ...Object.fromEntries(fields.map((field) => [field, ""])) };
+    });
+    setFieldSources((current) => {
+      if (!fields.some((field) => current[field] === "weather")) return current;
+      return { ...current, ...Object.fromEntries(fields.map((field) => [field, "manual"])) };
+    });
+  }, [farm?.location?.latitude, farm?.location?.longitude, farm?.weather, farm?.weatherLoading, dirty]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    markManual(name);
+    if (name === "observationDate" || name === "latitude") {
+      setFormState((current) => ({
+        ...current,
+        ...Object.fromEntries(["minimumTemperature", "maximumTemperature", "forecastRainfall"].filter((field) => !dirty.current[field]).map((field) => [field, ""])),
+      }));
+      setFieldSources((current) => ({ ...current, ...Object.fromEntries(["minimumTemperature", "maximumTemperature", "forecastRainfall"].filter((field) => !dirty.current[field]).map((field) => [field, "manual"])) }));
+    }
     setFormState((current) => ({ ...current, [name]: value }));
     if (WEATHER_ASSISTED_FIELDS.has(name)) {
       setFieldSources((current) => ({ ...current, [name]: "manual" }));
@@ -159,8 +186,17 @@ export default function SmartIrrigationPage() {
   };
 
   const handleWeatherLoaded = (weather) => {
-    const updates = getIrrigationWeatherUpdates(weather);
-    setFormState((current) => ({ ...current, ...updates }));
+    // Current weather cannot describe a manually chosen historical observation.
+    if (dirty.current.observationDate && formState.observationDate !== weather.today?.date) return;
+    if (dirty.current.latitude && (String(formState.latitude).trim() === "" || Number(formState.latitude) !== Number(weather.irrigationInputs?.latitude))) return;
+    const updates = Object.fromEntries(Object.entries(getIrrigationWeatherUpdates(weather)).filter(([field]) => !dirty.current[field]));
+    setFormState((current) => {
+      const next = { ...mergePrefill(current, updates, dirty.current) };
+      for (const field of ["minimumTemperature", "maximumTemperature", "forecastRainfall"]) {
+        if (!dirty.current[field] && !(field in updates)) next[field] = "";
+      }
+      return next;
+    });
     setFieldSources((current) => getIrrigationWeatherSources(current, updates));
     setFieldErrors((current) => ({
       ...current,
@@ -177,9 +213,9 @@ export default function SmartIrrigationPage() {
     }
 
     const isWeather = source === "weather";
-    const label = isWeather
+    const label = fieldName === "latitude" && sources.latitude && !dirty.current.latitude ? sources.latitude : isWeather
       ? "From Open-Meteo"
-      : source === "saved"
+      : source === "system" ? "Current date" : source === "saved"
         ? "Saved coordinate"
         : source === "retained"
           ? "Retained input · review"
@@ -200,6 +236,9 @@ export default function SmartIrrigationPage() {
 
   const validateAndBuildPayload = () => {
     const nextErrors = {};
+    for (const field of ["crop", "growthStage", "soilType"]) {
+      if (!formState[field]) nextErrors[field] = "Choose a value.";
+    }
     const payload = {
       crop: formState.crop,
       growthStage: formState.growthStage,
@@ -253,6 +292,7 @@ export default function SmartIrrigationPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (farm?.weatherLoading || isSubmitting) return;
     const payload = validateAndBuildPayload();
 
     if (!payload || isSubmitting) {
@@ -334,11 +374,10 @@ export default function SmartIrrigationPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+            <FarmContextSelector disabled={isSubmitting} />
+            <PrefillSources sources={sources} />
             <IrrigationWeatherAssist
-              latitude={formState.latitude}
-              latitudeSource={fieldSources.latitude}
               disabled={isSubmitting}
-              onLatitudeChange={handleChange}
               onWeatherLoaded={handleWeatherLoaded}
             />
 
@@ -347,19 +386,22 @@ export default function SmartIrrigationPage() {
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <label className="block">
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Crop</span>
-                  <select name="crop" value={formState.crop} onChange={handleChange} disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                  <select required name="crop" value={formState.crop} onChange={handleChange} disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                    <option value="">Choose crop</option>
                     {CROP_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                 </label>
                 <label className="block">
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Growth stage</span>
-                  <select name="growthStage" value={formState.growthStage} onChange={handleChange} disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                  <select required name="growthStage" value={formState.growthStage} onChange={handleChange} disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                    <option value="">Choose observed stage</option>
                     {STAGE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                 </label>
                 <label className="block">
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Soil reference profile</span>
-                  <select name="soilType" value={formState.soilType} onChange={handleChange} disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                  <select required name="soilType" value={formState.soilType} onChange={handleChange} disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                    <option value="">Choose soil profile</option>
                     {SOIL_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                 </label>
@@ -385,6 +427,7 @@ export default function SmartIrrigationPage() {
                   <input type="date" name="observationDate" value={formState.observationDate} onChange={handleChange} required disabled={isSubmitting} className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
                   {fieldErrors.observationDate ? <span className="mt-1 block text-xs text-rose-600">{fieldErrors.observationDate}</span> : null}
                 </label>
+                {renderNumericField("latitude")}
                 {renderNumericField("daysSinceLastIrrigation")}
               </div>
             </fieldset>
@@ -403,7 +446,7 @@ export default function SmartIrrigationPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || farm?.weatherLoading}
               className="mx-auto block w-full max-w-sm rounded-2xl bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-400 dark:focus-visible:ring-offset-slate-950"
             >
               {isSubmitting

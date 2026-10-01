@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import UserAvatar from "../../components/profile/UserAvatar";
 import FarmGalleryManager from "../../components/profile/FarmGalleryManager";
 import FarmerBioEditor from "../../components/profile/FarmerBioEditor";
+import { useFarmContext } from "../../context/FarmContext";
 import { useAuth } from "../../context/AuthContext";
 import {
-  getOwnFarmerProfile,
   updateFarmerProfileImage,
 } from "../../services/farmerProfileService";
 
@@ -53,9 +53,11 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [error, setError] = useState("");
-  const [farmerProfile, setFarmerProfile] = useState(null);
-  const [isProfileLoading, setIsProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState("");
+  const farm = useFarmContext();
+  const farmerProfile = farm?.profile;
+  const setFarmerProfile = farm?.setProfile;
+  const isProfileLoading = farm?.loading || false;
+  const profileError = farm?.error || "";
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState("");
   const [isPhotoSaving, setIsPhotoSaving] = useState(false);
@@ -65,39 +67,6 @@ export default function ProfilePage() {
   useEffect(() => {
     setAddress({ ...emptyAddress, ...(user?.deliveryAddress || {}) });
   }, [user?.deliveryAddress]);
-
-  useEffect(() => {
-    if (!isFarmer) {
-      return undefined;
-    }
-
-    let isActive = true;
-
-    const loadProfile = async () => {
-      setIsProfileLoading(true);
-      setProfileError("");
-
-      try {
-        const response = await getOwnFarmerProfile();
-        if (isActive) {
-          setFarmerProfile(response.profile || null);
-        }
-      } catch (requestError) {
-        if (isActive) {
-          setProfileError(requestError.message || "We could not load your farm information.");
-        }
-      } finally {
-        if (isActive) {
-          setIsProfileLoading(false);
-        }
-      }
-    };
-
-    loadProfile();
-    return () => {
-      isActive = false;
-    };
-  }, [isFarmer]);
 
   useEffect(() => {
     if (!selectedPhoto) {
@@ -323,6 +292,7 @@ export default function ProfilePage() {
             ) : profileError ? (
               <p className="mt-5 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
                 {profileError}
+                <button type="button" onClick={farm?.reload} className="ml-3 font-semibold underline underline-offset-2">Retry farm profile</button>
               </p>
             ) : (
               <dl className="mt-5 grid gap-5 sm:grid-cols-2">

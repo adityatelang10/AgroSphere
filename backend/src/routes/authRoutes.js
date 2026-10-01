@@ -18,9 +18,11 @@ const {
   resetPassword,
 } = require("../controllers/passwordResetController");
 const { createPasswordResetLimiter, getPasswordResetLimits } = require("../middleware/passwordResetLimiter");
+const { createRequestLimiter, getRequestLimits } = require("../middleware/requestRateLimiter");
 
 const router = express.Router();
 const recoveryLimits = getPasswordResetLimits();
+const requestLimits = getRequestLimits();
 
 // Recovery has its own per-IP and normalized-email quotas, independent of login.
 router.post(
@@ -42,8 +44,15 @@ router.post(
   resetPassword
 );
 
-router.post("/register", registerValidation, register);
-router.post("/login", loginValidation, login);
+router.post("/register",
+  createRequestLimiter({ ...requestLimits.registerIp, scope: "register-ip" }),
+  registerValidation, register);
+router.post("/login",
+  createRequestLimiter({ ...requestLimits.loginIp, scope: "login-ip" }),
+  loginValidation,
+  createRequestLimiter({ ...requestLimits.loginEmail, scope: "login-email",
+    key: (req) => typeof req.body.email === "string" ? req.body.email.toLowerCase().trim() : "invalid-email" }),
+  login);
 router.post("/logout", authMiddleware, logout);
 router.get("/me", authMiddleware, getCurrentUser);
 router.patch(

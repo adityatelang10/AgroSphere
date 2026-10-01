@@ -7,9 +7,9 @@ const isValidCoordinate = (value, minimum, maximum) => {
   return numericValue !== null && numericValue >= minimum && numericValue <= maximum;
 };
 
-export function readWeatherLocation() {
+export function readWeatherLocation(ownerId = "") {
   try {
-    const savedValue = window.localStorage.getItem(WEATHER_LOCATION_KEY);
+    const savedValue = window.localStorage.getItem(WEATHER_LOCATION_KEY + (ownerId ? `:${ownerId}` : ""));
     if (!savedValue) {
       return null;
     }
@@ -31,7 +31,7 @@ export function readWeatherLocation() {
   }
 }
 
-export function saveWeatherLocation({ latitude, longitude }) {
+export function saveWeatherLocation({ latitude, longitude }, ownerId = "") {
   if (
     !isValidCoordinate(latitude, -90, 90) ||
     !isValidCoordinate(longitude, -180, 180)
@@ -41,7 +41,7 @@ export function saveWeatherLocation({ latitude, longitude }) {
 
   try {
     window.localStorage.setItem(
-      WEATHER_LOCATION_KEY,
+      WEATHER_LOCATION_KEY + (ownerId ? `:${ownerId}` : ""),
       JSON.stringify({
         latitude: Number(latitude),
         longitude: Number(longitude),

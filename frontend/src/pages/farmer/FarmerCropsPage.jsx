@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import TraceabilityQrPanel from "../../components/traceability/TraceabilityQrPanel";
+import { useFarmContext } from "../../context/FarmContext";
 import { useAuth } from "../../context/AuthContext";
 import { ensureCropTraceability, listCrops, removeCrop } from "../../services/cropService";
 import CropImage from "../../components/marketplace/CropImage";
@@ -39,6 +40,7 @@ const getStockStatus = (stockQuantity) => {
 
 export default function FarmerCropsPage() {
   const { user } = useAuth();
+  const farm = useFarmContext();
   const [crops, setCrops] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -110,6 +112,7 @@ export default function FarmerCropsPage() {
     setRemovalMessage("");
     try {
       await removeCrop(crop._id);
+      farm?.reload();
       setCrops((current) => current.filter((item) => item._id !== crop._id));
       setRemovalMessage(`${crop.name} listing removed. Existing history is preserved.`);
     } catch (requestError) {

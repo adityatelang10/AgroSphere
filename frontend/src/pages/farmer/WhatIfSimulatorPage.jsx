@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { useFarmContext } from "../../context/FarmContext";
+import FarmContextSelector, { PrefillSources } from "../../components/profile/FarmContextSelector";
+import useEditablePrefill from "../../hooks/useEditablePrefill";
+import { supportedCrop } from "../../utils/farmContext";
+
 import ModuleHeader from "../../components/ui/ModuleHeader";
 import ScrollReveal from "../../components/ui/ScrollReveal";
 import useResultReveal from "../../hooks/useResultReveal";
@@ -168,7 +173,13 @@ const DecisionCard = ({ label, decision, accent }) => (
 );
 
 export default function WhatIfSimulatorPage() {
-  const [selectedCrop, setSelectedCrop] = useState("tomato");
+  const farm = useFarmContext();
+  const [cropForm, setCropForm] = useState({ selectedCrop: "" });
+  const selectedCrop = cropForm.selectedCrop;
+  const { sources, markManual } = useEditablePrefill(setCropForm, {
+    selectedCrop: { value: supportedCrop(farm?.selectedListing, CROP_OPTIONS.map(([value]) => value)), source: "selected listing; scenarios still use its crop's saved decision baseline" },
+  });
+  const setSelectedCrop = (value) => { markManual("selectedCrop"); setCropForm({ selectedCrop: value }); };
   const [context, setContext] = useState(null);
   const [scenarioForm, setScenarioForm] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -180,6 +191,7 @@ export default function WhatIfSimulatorPage() {
 
   useEffect(() => {
     let ignore = false;
+    if (!selectedCrop) { setError(""); setIsLoading(false); setContext(null); setScenarioForm(null); setResult(null); return; }
     setIsLoading(true);
     setError("");
     setResult(null);
@@ -319,11 +331,14 @@ export default function WhatIfSimulatorPage() {
         </p>
       </ModuleHeader>
 
+      <FarmContextSelector disabled={isSubmitting} />
+      <PrefillSources sources={sources} />
       <ScrollReveal as="section" className="rounded-3xl border border-fuchsia-200/80 bg-white/90 p-5 shadow-sm dark:border-fuchsia-950 dark:bg-slate-950/80">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <label className="block w-full max-w-md">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-700 dark:text-fuchsia-300">Decision crop</span>
           <select value={selectedCrop} onChange={(event) => setSelectedCrop(event.target.value)} disabled={isLoading || isSubmitting} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 outline-none focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+            <option value="">Choose crop</option>
             {CROP_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
           </label>

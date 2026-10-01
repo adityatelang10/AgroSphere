@@ -97,7 +97,7 @@ for (const [mode, ipLimit, emailLimit] of [["production", 10, 3], ["development"
     const login = await f.post("/login", { email: "known@example.invalid", password: "FixturePassword1" });
     assert.equal(login.status, 200);
     assert.match(login.headers.get("set-cookie"), /HttpOnly/);
-    assert.equal(login.headers.get("x-ratelimit-scope"), null);
+    assert.equal(login.headers.get("x-ratelimit-scope"), "login-email");
     const invalidReset = await f.post("/reset-password", {});
     assert.equal(invalidReset.status, 400);
     assert.equal(invalidReset.headers.get("x-ratelimit-scope"), "reset-password-ip");
@@ -124,7 +124,10 @@ test("server configuration errors do not spend email quota, but retain the IP ab
 
 test("login attempts do not consume the recovery quota", async (t) => {
   const f = await harness(t);
-  for (let i = 0; i < 12; i += 1) assert.equal((await f.post("/login", {})).status, 400);
+  for (let i = 0; i < 12; i += 1) {
+    const login = await f.post("/login", {});
+    assert.ok([400, 429].includes(login.status)); // Login may hit its own independent quota.
+  }
   const recovery = await f.post("/forgot-password", { email: "unknown@example.invalid" });
   assert.equal(recovery.status, 200);
   assert.equal(recovery.headers.get("ratelimit-remaining"), "2");

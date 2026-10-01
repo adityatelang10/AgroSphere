@@ -19,7 +19,9 @@ const getPasswordResetLimits = (environment = process.env) => {
 
 // Bounded per-process limiter for the current single-Node deployment.
 const createPasswordResetLimiter = ({ limit, windowMs, key = (req) => req.ip,
-  now = Date.now, maxEntries = 10000, scope = "password-recovery", skipServerErrors = false } = {}) => {
+  now = Date.now, maxEntries = 10000, scope = "password-recovery", skipServerErrors = false,
+  code = "PASSWORD_RECOVERY_RATE_LIMITED",
+  message = "Too many recovery attempts. Please wait before trying again." } = {}) => {
   const entries = new Map();
   return (req, res, next) => {
     const time = now();
@@ -43,8 +45,7 @@ const createPasswordResetLimiter = ({ limit, windowMs, key = (req) => req.ip,
       res.set("RateLimit-Remaining", "0");
       res.set("Retry-After", String(retryAfter));
       return res.status(429).json({ success: false,
-        code: "PASSWORD_RECOVERY_RATE_LIMITED", limiter: scope, retryAfterSeconds: retryAfter,
-        message: "Too many recovery attempts. Please wait before trying again." });
+        code, limiter: scope, retryAfterSeconds: retryAfter, message });
     }
     entry.count += 1;
     if (skipServerErrors) {

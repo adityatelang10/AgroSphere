@@ -184,6 +184,7 @@ export default function CropRecommendationPage() {
             </span>
           </div>
 
+          <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Manual planning inputs: no stored soil test is available for N, P, K or pH. The training dataset does not define a weather measurement period, so today's weather and 24-hour rainfall are not substituted for its climate inputs.</p>
           <form onSubmit={handleSubmit} className="mt-4 space-y-3">
             {[
               {

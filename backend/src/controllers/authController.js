@@ -22,10 +22,15 @@ const registerValidation = [
     .withMessage("Please provide a valid email address")
     .normalizeEmail(),
   body("password")
+    .isString()
+    .withMessage("Password must be text")
+    .bail()
     .notEmpty()
     .withMessage("Password is required")
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long")
+    .custom((value) => Buffer.byteLength(value, "utf8") <= 72)
+    .withMessage("Password cannot exceed 72 UTF-8 bytes")
     .matches(/[A-Z]/)
     .withMessage("Password must include at least one uppercase letter")
     .matches(/[0-9]/)
@@ -165,7 +170,8 @@ const handleValidation = (req, res) => {
   return res.status(400).json({
     success: false,
     message: "Validation failed",
-    errors: errors.array(),
+    // Keep field feedback, but never echo passwords or other submitted values.
+    errors: errors.array().map(({ type, path, location, msg }) => ({ type, path, location, msg })),
   });
 };
 

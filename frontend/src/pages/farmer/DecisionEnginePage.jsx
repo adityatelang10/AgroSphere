@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { useFarmContext } from "../../context/FarmContext";
+import FarmContextSelector, { PrefillSources } from "../../components/profile/FarmContextSelector";
+import useEditablePrefill from "../../hooks/useEditablePrefill";
+import { supportedCrop, listingQuantity } from "../../utils/farmContext";
+
 import ModuleHeader from "../../components/ui/ModuleHeader";
 import ScrollReveal from "../../components/ui/ScrollReveal";
 import useResultReveal from "../../hooks/useResultReveal";
@@ -32,16 +37,16 @@ const QUANTITY_UNITS = [
 ];
 
 const initialFormState = {
-  selectedCrop: "tomato",
-  farmState: "growing",
-  availableQuantity: "0",
-  quantityUnit: "kg",
-  waterAvailability: "adequate",
-  storageAvailable: "false",
+  selectedCrop: "",
+  farmState: "",
+  availableQuantity: "",
+  quantityUnit: "",
+  waterAvailability: "",
+  storageAvailable: "",
   currentSalePrice: "",
-  transportCost: "0",
-  storageCost: "0",
-  otherCost: "0",
+  transportCost: "",
+  storageCost: "",
+  otherCost: "",
 };
 
 const CONTROL_CLASSES =
@@ -163,6 +168,7 @@ const EvidenceCard = ({ evidenceKey, item }) => {
 };
 
 export default function DecisionEnginePage() {
+  const farm = useFarmContext();
   const [formState, setFormState] = useState(initialFormState);
   const [fieldErrors, setFieldErrors] = useState({});
   const [evidencePreview, setEvidencePreview] = useState(null);
@@ -172,9 +178,19 @@ export default function DecisionEnginePage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const resultRef = useResultReveal(result);
+  useEffect(() => { setResult(null); }, [formState]);
+  const contextCrop = supportedCrop(farm?.selectedListing, CROP_OPTIONS.map(([value]) => value));
+  const matchingListing = contextCrop && (!formState.selectedCrop || formState.selectedCrop === contextCrop) ? farm?.selectedListing : null;
+  const { sources, markManual } = useEditablePrefill(setFormState, {
+    selectedCrop: { value: contextCrop, source: "selected active listing" },
+    availableQuantity: { value: listingQuantity(matchingListing), source: "selected listing's current stock; confirm this is the produce being assessed" },
+    quantityUnit: { value: matchingListing?.unit, source: "selected listing's stock unit" },
+  });
 
   useEffect(() => {
     let ignore = false;
+    if (!formState.selectedCrop) { setEvidencePreview(null); setEvidenceError(""); setIsLoadingEvidence(false); return; }
+    setEvidencePreview(null);
     setIsLoadingEvidence(true);
     setEvidenceError("");
     setResult(null);
@@ -215,6 +231,12 @@ export default function DecisionEnginePage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    markManual(name);
+    if (name === "selectedCrop" || name === "quantityUnit") {
+      markManual("availableQuantity");
+      setFormState((current) => ({ ...current, availableQuantity: "" }));
+    }
+    if (name === "selectedCrop" || name === "availableQuantity" || name === "quantityUnit") markManual("quantityUnit");
     setFormState((current) => ({ ...current, [name]: value }));
     setFieldErrors((current) => ({ ...current, [name]: "" }));
     setError("");
@@ -223,6 +245,9 @@ export default function DecisionEnginePage() {
 
   const validateAndBuildPayload = () => {
     const nextErrors = {};
+    for (const field of ["selectedCrop", "farmState", "quantityUnit", "waterAvailability", "storageAvailable"]) {
+      if (!formState[field]) nextErrors[field] = "Choose a value.";
+    }
     const quantity = Number(formState.availableQuantity);
     const payload = {
       selectedCrop: formState.selectedCrop,
@@ -232,7 +257,7 @@ export default function DecisionEnginePage() {
       storageAvailable: formState.storageAvailable === "true",
     };
 
-    if (!Number.isFinite(quantity) || quantity < 0) {
+    if (formState.availableQuantity === "" || !Number.isFinite(quantity) || quantity < 0) {
       nextErrors.availableQuantity = "Quantity must be zero or a positive number.";
     } else if (formState.farmState !== "growing" && quantity <= 0) {
       nextErrors.availableQuantity = "Harvest-ready or harvested produce needs a quantity above zero.";
@@ -242,7 +267,7 @@ export default function DecisionEnginePage() {
 
     ["transportCost", "storageCost", "otherCost"].forEach((field) => {
       const value = Number(formState[field]);
-      if (!Number.isFinite(value) || value < 0) {
+      if (formState[field] === "" || !Number.isFinite(value) || value < 0) {
         nextErrors[field] = "Enter zero or a positive amount.";
       } else {
         payload[field] = value;
@@ -337,17 +362,22 @@ export default function DecisionEnginePage() {
             These fields describe one current scenario. Farmer identity always comes from your authenticated session.
           </p>
 
+          <FarmContextSelector disabled={isSubmitting} />
+          <PrefillSources sources={sources} />
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Current field conditions and actual costs are yours to confirm. Enter 0 only when a cost really is zero; wholesale reports do not set your sale price.</p>
           <form onSubmit={handleSubmit} className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Current crop</span>
-              <select name="selectedCrop" value={formState.selectedCrop} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
+              <select required name="selectedCrop" value={formState.selectedCrop} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
+                <option value="">Choose crop</option>
                 {CROP_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Crop / produce state</span>
-              <select name="farmState" value={formState.farmState} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
+              <select required name="farmState" value={formState.farmState} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
+                <option value="">Choose farm state</option>
                 <option value="growing">Growing crop</option>
                 <option value="harvest_ready">Harvest-ready</option>
                 <option value="harvested">Harvested produce</option>
@@ -362,14 +392,16 @@ export default function DecisionEnginePage() {
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Quantity unit</span>
-              <select name="quantityUnit" value={formState.quantityUnit} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
+              <select required name="quantityUnit" value={formState.quantityUnit} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
+                <option value="">Choose unit</option>
                 {QUANTITY_UNITS.map((unit) => <option key={unit} value={unit}>{unit}</option>)}
               </select>
             </label>
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Water availability</span>
-              <select name="waterAvailability" value={formState.waterAvailability} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
+              <select required name="waterAvailability" value={formState.waterAvailability} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
+                <option value="">Choose water availability</option>
                 <option value="adequate">Adequate</option>
                 <option value="limited">Limited</option>
                 <option value="unavailable">Unavailable</option>
@@ -378,8 +410,9 @@ export default function DecisionEnginePage() {
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Storage available</span>
-              <select name="storageAvailable" value={formState.storageAvailable} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
+              <select required name="storageAvailable" value={formState.storageAvailable} onChange={handleChange} disabled={isSubmitting} className={CONTROL_CLASSES}>
                 <option value="false">No</option>
+                <option value="">Choose storage availability</option>
                 <option value="true">Yes</option>
               </select>
             </label>

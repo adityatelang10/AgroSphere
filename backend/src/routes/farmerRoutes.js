@@ -10,6 +10,7 @@ const {
   removeGalleryImage,
 } = require("../controllers/farmerProfileController");
 const { authMiddleware, requireRole } = require("../middleware/authMiddleware");
+const { getFarmContext } = require("../controllers/farmContextController");
 
 const router = express.Router();
 
@@ -76,6 +77,7 @@ const uploadGalleryImages = (req, res, next) => galleryUpload(req, res, (error) 
 
 router.get("/public/:id", getPublicFarmerProfile);
 router.use(authMiddleware, requireRole("FARMER"));
+router.get("/context", getFarmContext);
 router.get("/profile", getOwnFarmerProfile);
 router.patch("/profile", updateFarmerBio);
 router.put("/profile/image", uploadSingleProfileImage, updateProfileImage);

@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import Settings, get_settings
 from app.schemas.crop_recommendation import CropPredictionRequest, CropPredictionResponse
@@ -103,7 +104,8 @@ async def predict_disease(
                 detail="Leaf image must not exceed 5 MB",
             )
 
-        return disease_model_service.predict(image_bytes)
+        # CPU preprocessing/inference must not block the ASGI event loop.
+        return await run_in_threadpool(disease_model_service.predict, image_bytes)
     except InvalidDiseaseImageError as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

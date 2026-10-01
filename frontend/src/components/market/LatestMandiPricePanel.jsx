@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
+import { useFarmContext } from "../../context/FarmContext";
+import useEditablePrefill from "../../hooks/useEditablePrefill";
+import { PrefillSources } from "../profile/FarmContextSelector";
+import { contextualMandiSelection } from "../../utils/mandiContext";
 import { getLatestMandiPrices } from "../../services/mandiPriceService";
 import {
   NO_REPORT_MESSAGE, formatMandiDate, formatMandiPrice, getCommodities, getDistricts,
@@ -15,13 +19,30 @@ const freshnessClass = {
 };
 
 export default function LatestMandiPricePanel() {
-  const [state, setState] = useState("Karnataka");
+  const farm = useFarmContext();
+  const location = farm?.selectedListing?.location || farm?.profile?.location || {};
+  const [stateForm, setStateForm] = useState({ state: "" });
+  const state = stateForm.state;
+  const { sources, markManual } = useEditablePrefill(setStateForm, {
+    state: { value: location.state, source: farm?.selectedListing ? "selected listing location" : "farm profile" },
+  });
+  const setState = (value) => { markManual("state"); setStateForm({ state: value }); };
+  const filtersEdited = useRef(false);
   const [data, setData] = useState(null);
   const [selection, setSelection] = useState(initialMandiSelection([]));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const requestRef = useRef(null);
+  useEffect(() => {
+    requestRef.current?.abort();
+    setLoading(false);
+    setData(null);
+    setSelection(initialMandiSelection([]));
+  }, [state]);
+  useEffect(() => {
+    if (data && !filtersEdited.current) setSelection(contextualMandiSelection(data.records, { district: location.district, state }, farm?.selectedListing?.name));
+  }, [data, state, location.district, farm?.selectedListing?.name]);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60000);
@@ -35,6 +56,7 @@ export default function LatestMandiPricePanel() {
     const controller = new AbortController();
     requestRef.current = controller;
     setLoading(true);
+    filtersEdited.current = false;
     setError("");
     setData(null);
     setSelection(initialMandiSelection([]));
@@ -43,7 +65,7 @@ export default function LatestMandiPricePanel() {
       if (controller.signal.aborted) return;
       if (!Array.isArray(response.records) || !response.source) throw new Error("The mandi price service returned an invalid response.");
       setData(response);
-      setSelection(initialMandiSelection(response.records));
+      setSelection(contextualMandiSelection(response.records, { district: location.district, state }, farm?.selectedListing?.name));
       setNow(new Date());
     } catch (requestError) {
       if (controller.signal.aborted) return;
@@ -60,11 +82,12 @@ export default function LatestMandiPricePanel() {
   const filters = [
     { name: "district", label: "District", options: getDistricts(records) },
     { name: "market", label: "Market", options: getMarkets(records, selection.district) },
-    { name: "commodity", label: "Commodity", options: getCommodities(records, selection.district, selection.market) },
+    { name: "commodity", label: "Commodity", options: selection.market ? getCommodities(records, selection.district, selection.market) : [...new Set(records.filter((row) => row.district === selection.district).map((row) => row.commodity))].sort() },
   ];
   const changeSelection = (name, value) => {
-    if (name === "district") setSelection(initialMandiSelection(records, value));
-    else if (name === "market") setSelection(initialMandiSelection(records, selection.district, value));
+    filtersEdited.current = true;
+    if (name === "district") setSelection(contextualMandiSelection(records, { district: value, state }, farm?.selectedListing?.name));
+    else if (name === "market") setSelection((current) => ({ ...current, market: value, commodity: getCommodities(records, current.district, value).includes(current.commodity) ? current.commodity : "" }));
     else setSelection((current) => ({ ...current, commodity: value }));
   };
 
@@ -79,6 +102,8 @@ export default function LatestMandiPricePanel() {
         <span className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-800 dark:bg-violet-950 dark:text-violet-200">data.gov.in / AGMARKNET</span>
       </div>
 
+      <PrefillSources sources={sources} />
+      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Matching district/commodity suggestions come from your selected listing or profile, only when present in returned reports. Choose a market if several match; it is a reporting location, not a promised sale location.</p>
       <form onSubmit={loadReports} className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
         <label className="block min-w-0 sm:w-72">
           <span className="text-sm font-medium text-slate-700 dark:text-slate-200">State</span>
@@ -108,6 +133,7 @@ export default function LatestMandiPricePanel() {
                 <label key={name} className="block min-w-0">
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{label}</span>
                   <select className={inputClass} value={selection[name]} onChange={(event) => changeSelection(name, event.target.value)}>
+                    <option value="">Choose {label.toLowerCase()}</option>
                     {options.map((option) => <option key={option} value={option}>{option}</option>)}
                   </select>
                 </label>

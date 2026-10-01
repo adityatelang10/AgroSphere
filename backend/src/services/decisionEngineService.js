@@ -140,7 +140,7 @@ const loadLatestEvidence = async ({ farmerId, selectedCrop, now = new Date() }) 
     ]);
 
   const matchingListings = profile
-    ? await Crop.find({ farmer: profile._id, name: cropAliasPattern })
+    ? await Crop.find({ farmer: profile._id, name: cropAliasPattern, removedAt: null })
         .sort({ updatedAt: -1 })
         .lean()
     : [];
@@ -312,7 +312,7 @@ const loadLatestEvidence = async ({ farmerId, selectedCrop, now = new Date() }) 
       freshness: "CURRENT_DATABASE",
       usedInScoring: matchingListings.length > 0,
       usageNote: profile
-        ? "Crop has no listing-status field; existing matching records are inventory context and are not claimed to be active."
+        ? "Matching non-removed listings provide current inventory context; this is not proof of harvest or sale readiness."
         : "No FarmerProfile exists, so marketplace inventory could not be matched.",
       data: {
         farmerProfileFound: Boolean(profile),
@@ -903,7 +903,7 @@ const evaluateDecision = ({ input, evidence, now = new Date() }) => {
         listCandidate,
         "matchingMarketplaceListing",
         SCORE_RULES.LIST_FOR_SALE.matchingMarketplaceListing,
-        "A matching marketplace inventory record exists; its active status is not assumed because the schema has no status field.",
+        "A matching non-removed marketplace listing exists; this does not establish harvest or sale readiness.",
         "Crop inventory"
       );
     }

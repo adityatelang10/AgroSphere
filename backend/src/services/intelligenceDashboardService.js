@@ -585,7 +585,7 @@ const buildDashboardPayload = ({
         evidence.inventory?.data?.matchingListingCount || 0,
       latestListingUpdatedAt: inventorySummary.latestListingUpdatedAt || null,
       terminologyNote:
-        "Crop records have no active/inactive status, so the dashboard reports current listing records without claiming they are active.",
+        "Inventory includes only non-removed listing records; listing availability does not establish harvest or sale readiness.",
     },
     orders: normalizeOrderSummary(orderSummary),
     alerts,
@@ -615,7 +615,7 @@ const loadInventorySummary = async (profileId) => {
   }
 
   const rows = await Crop.aggregate([
-    { $match: { farmer: profileId } },
+    { $match: { farmer: profileId, removedAt: null } },
     {
       $group: {
         _id: "$unit",
@@ -701,7 +701,7 @@ const getIntelligenceDashboard = async ({ farmer, now = new Date() }) => {
 
   const latestListing =
     !decision && profile
-      ? await Crop.findOne({ farmer: profile._id })
+      ? await Crop.findOne({ farmer: profile._id, removedAt: null })
           .sort({ updatedAt: -1 })
           .lean()
       : null;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import FarmContextSelector from "../../components/profile/FarmContextSelector";
 import ScrollReveal from "../../components/ui/ScrollReveal";
 import DashboardWeatherCard from "../../components/weather/DashboardWeatherCard";
 import { getFarmerIntelligenceDashboard } from "../../services/intelligenceDashboardService";
@@ -249,6 +250,7 @@ export default function FarmerDashboardPage() {
         </div>
       </ScrollReveal>
 
+      <FarmContextSelector />
       <DashboardWeatherCard />
 
       {nextBestAction.available ? (

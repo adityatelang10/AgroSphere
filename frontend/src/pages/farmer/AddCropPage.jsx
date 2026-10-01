@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { useFarmContext } from "../../context/FarmContext";
+import FarmContextSelector, { PrefillSources } from "../../components/profile/FarmContextSelector";
+import useEditablePrefill from "../../hooks/useEditablePrefill";
+
 import { createCrop } from "../../services/cropService";
 import CropImage from "../../components/marketplace/CropImage";
 import { selectCropImages } from "../../utils/cropImages";
@@ -21,6 +25,7 @@ const initialFormState = {
 
 export default function AddCropPage() {
   const navigate = useNavigate();
+  const farm = useFarmContext();
   const [formState, setFormState] = useState(initialFormState);
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -29,6 +34,13 @@ export default function AddCropPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const location = farm?.selectedListing?.location || farm?.profile?.location;
+  const locationSource = farm?.selectedListing ? "selected listing location" : "farm profile";
+  const { sources, markManual } = useEditablePrefill(setFormState, {
+    name: { value: farm?.selectedListing?.name, source: "selected listing; review for this new batch" },
+    district: { value: location?.district, source: locationSource },
+    state: { value: location?.state, source: locationSource },
+  });
 
   useEffect(() => {
     const previews = imageFiles.map((file) => ({ file, url: URL.createObjectURL(file) }));
@@ -38,6 +50,7 @@ export default function AddCropPage() {
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
+    markManual(name);
     setFormState((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -74,6 +87,7 @@ export default function AddCropPage() {
       imageFiles.forEach((image) => formData.append("images", image));
 
       await createCrop(formData);
+      farm?.reload();
       navigate("/farmer/crops", { replace: true });
     } catch (requestError) {
       if (requestError?.data?.errors && Array.isArray(requestError.data.errors)) {
@@ -114,7 +128,9 @@ export default function AddCropPage() {
       </div>
 
       <section className="rounded-[2rem] border border-white/60 bg-white/90 p-6 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
-        <form onSubmit={handleSubmit} className="grid gap-6 md:grid-cols-2">
+        <FarmContextSelector disabled={isSubmitting} />
+        <PrefillSources sources={sources} />
+        <form onSubmit={handleSubmit} className="mt-4 grid gap-6 md:grid-cols-2">
           
           <label className="block md:col-span-2">
             <span className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">

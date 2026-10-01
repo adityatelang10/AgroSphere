@@ -1,4 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { useFarmContext } from "../../context/FarmContext";
+import FarmContextSelector, { PrefillSources } from "../../components/profile/FarmContextSelector";
+import useEditablePrefill from "../../hooks/useEditablePrefill";
+import { supportedCrop, listingQuintals } from "../../utils/farmContext";
 
 import LatestMandiPricePanel from "../../components/market/LatestMandiPricePanel";
 import ModuleHeader from "../../components/ui/ModuleHeader";
@@ -66,13 +71,13 @@ const NUMERIC_FIELDS = [
 ];
 
 const initialFormState = {
-  crop: "tomato",
-  marketKey: "tomato-pune-local",
+  crop: "",
+  marketKey: "",
   quantityQuintals: "",
   expectedSalePrice: "",
-  transportCost: "0",
-  storageCost: "0",
-  otherCost: "0",
+  transportCost: "",
+  storageCost: "",
+  otherCost: "",
 };
 
 const formatMoney = (value) =>
@@ -106,12 +111,20 @@ const trendClasses = {
 };
 
 export default function MarketIntelligencePage() {
+  const farm = useFarmContext();
   const [formState, setFormState] = useState(initialFormState);
   const [fieldErrors, setFieldErrors] = useState({});
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const resultRef = useResultReveal(result);
+  useEffect(() => { setResult(null); }, [formState]);
+  const contextCrop = supportedCrop(farm?.selectedListing, MARKET_OPTIONS.map((item) => item.crop));
+  const { sources, markManual } = useEditablePrefill(setFormState, {
+    crop: { value: contextCrop, source: "selected active listing" },
+    marketKey: { value: MARKET_OPTIONS.find((item) => item.crop === contextCrop)?.marketKey, source: "only supported historical archive for this crop, not your farm location" },
+    quantityQuintals: { value: contextCrop && (!formState.crop || formState.crop === contextCrop) ? listingQuintals(farm?.selectedListing) : "", source: "selected listing's current stock, converted to quintals; confirm intended quantity" },
+  });
 
   const cropOptions = useMemo(
     () =>
@@ -131,8 +144,12 @@ export default function MarketIntelligencePage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    markManual(name);
 
     if (name === "crop") {
+      markManual("marketKey");
+      markManual("quantityQuintals");
+      setFormState((current) => ({ ...current, quantityQuintals: "" }));
       const firstMarket = MARKET_OPTIONS.find((option) => option.crop === value);
       setFormState((current) => ({
         ...current,
@@ -162,11 +179,7 @@ export default function MarketIntelligencePage() {
     NUMERIC_FIELDS.forEach((field) => {
       const rawValue = formState[field.name];
       if (rawValue === "") {
-        if (field.required) {
-          nextErrors[field.name] = `${field.label} is required.`;
-        } else {
-          payload[field.name] = 0;
-        }
+        nextErrors[field.name] = `${field.label} is required. Enter 0 only if it is actually zero.`;
         return;
       }
 
@@ -232,6 +245,7 @@ export default function MarketIntelligencePage() {
         description="Explore latest reported Government wholesale mandi prices, with separate historical analysis and a manual return calculator below."
       />
 
+      <FarmContextSelector disabled={isSubmitting} />
       <LatestMandiPricePanel />
 
       <div className="border-t border-slate-200 pt-6 dark:border-slate-800">
@@ -249,6 +263,7 @@ export default function MarketIntelligencePage() {
           <p className="text-xs text-slate-500 dark:text-slate-400">Units: quintals and ₹/quintal</p>
         </div>
 
+        <PrefillSources sources={sources} />
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           <fieldset className="rounded-2xl border border-violet-200 bg-violet-50/60 px-4 pb-3 pt-2.5 dark:border-violet-900/50 dark:bg-violet-950/20">
             <legend className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-violet-800 dark:text-violet-200">Historical market selector</legend>
@@ -264,6 +279,7 @@ export default function MarketIntelligencePage() {
                 disabled={isSubmitting}
                 className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               >
+                <option value="">Choose supported crop</option>
                 {cropOptions.map((option) => (
                   <option key={option.crop} value={option.crop}>
                     {option.cropLabel}
@@ -283,6 +299,7 @@ export default function MarketIntelligencePage() {
                 disabled={isSubmitting}
                 className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               >
+                <option value="">Choose archive</option>
                 {availableMarkets.map((option) => (
                   <option key={option.marketKey} value={option.marketKey}>
                     {option.marketLabel}

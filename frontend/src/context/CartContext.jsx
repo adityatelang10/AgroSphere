@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
 
 import {
   getCartAfterPaymentVerification,
@@ -6,7 +7,6 @@ import {
 } from "../utils/cartCalculations";
 
 const CartContext = createContext(null);
-const STORAGE_KEY = "agrosphere-cart";
 
 const asPositiveNumber = (value, fallback = 0) => {
   const parsedValue = Number(value);
@@ -33,13 +33,13 @@ const normaliseCartItem = (item) => {
   };
 };
 
-const readStoredCart = () => {
+const readStoredCart = (storageKey) => {
   if (typeof window === "undefined") {
     return [];
   }
 
   try {
-    const storedValue = window.localStorage.getItem(STORAGE_KEY);
+    const storedValue = window.localStorage.getItem(storageKey);
     if (!storedValue) {
       return [];
     }
@@ -57,11 +57,23 @@ const readStoredCart = () => {
 };
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(readStoredCart);
+  const { user } = useAuth();
+  const scope = user?.id ? `${user.role}:${user.id}` : "guest";
+  // Remount cart state synchronously on account changes, before rendering children.
+  // Never import the legacy shared cart: its owner cannot be established safely.
+  return <ScopedCartProvider key={scope} storageKey={`agrosphere-cart:${scope}`}>{children}</ScopedCartProvider>;
+}
+
+function ScopedCartProvider({ children, storageKey }) {
+  const [items, setItems] = useState(() => readStoredCart(storageKey));
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(items));
+    } catch {
+      // Storage may be blocked or full; keep the current in-memory cart usable.
+    }
+  }, [items, storageKey]);
 
   const addToCart = (crop, quantity = 1) => {
     const nextItem = normaliseCartItem({ ...crop, quantity });
