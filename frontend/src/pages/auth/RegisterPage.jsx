@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 import PasswordInput from "../../components/ui/PasswordInput";
+import AuthSurface from "../../components/ui/AuthSurface";
 
 const initialFormState = {
   name: "",
@@ -86,8 +87,8 @@ export default function RegisterPage() {
   };
 
   return (
-    <section className="mx-auto max-w-3xl rounded-[2rem] border border-white/60 bg-white/90 p-6 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
-      <p className="text-sm font-medium uppercase tracking-[0.24em] text-amber-700 dark:text-amber-400">
+    <AuthSurface register>
+      <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">
         Join AgroSphere
       </p>
       <h1 className="mt-3 font-display text-3xl font-bold text-slate-950 dark:text-slate-50">
@@ -257,10 +258,10 @@ export default function RegisterPage() {
 
       <p className="mt-6 text-sm text-slate-600 dark:text-slate-400">
         Already have an account?{" "}
-        <Link to="/login" className="font-medium text-emerald-700 dark:text-emerald-400">
+        <Link to="/login" data-auth-switch className="font-medium text-emerald-700 dark:text-emerald-400">
           Login here
         </Link>
       </p>
-    </section>
+    </AuthSurface>
   );
 }

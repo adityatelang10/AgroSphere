@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 import PasswordInput from "../../components/ui/PasswordInput";
+import AuthSurface from "../../components/ui/AuthSurface";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ export default function LoginPage() {
   };
 
   return (
-    <section className="mx-auto max-w-md rounded-[2rem] border border-white/60 bg-white/90 p-6 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+    <AuthSurface>
       <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">
         Welcome Back
       </p>
@@ -62,7 +63,7 @@ export default function LoginPage() {
         Sign in to AgroSphere
       </h1>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-        Access your marketplace account using the secure HTTP-only session cookie.
+        Your connection to the field starts here. Welcome back to AgroSphere.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -120,10 +121,10 @@ export default function LoginPage() {
 
       <p className="mt-6 text-sm text-slate-600 dark:text-slate-400">
         New to AgroSphere?{" "}
-        <Link to="/register" className="font-medium text-emerald-700 dark:text-emerald-400">
+        <Link to="/register" data-auth-switch className="font-medium text-emerald-700 dark:text-emerald-400">
           Create an account
         </Link>
       </p>
-    </section>
+    </AuthSurface>
   );
 }
